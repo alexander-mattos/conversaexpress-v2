@@ -73,7 +73,7 @@ JWT_REFRESH_SECRET=${jwt_refresh_secret}
 
 REDIS_URI=redis://:${mysql_root_password}@127.0.0.1:${redis_port}
 REDIS_OPT_LIMITER_MAX=1
-REGIS_OPT_LIMITER_DURATION=3000
+REDIS_OPT_LIMITER_DURATION=3000
 
 USER_LIMIT=${max_user}
 CONNECTIONS_LIMIT=${max_whats}
@@ -99,7 +99,7 @@ backend_node_dependencies() {
 
   sudo su - deploy <<EOF
   cd /home/deploy/${instancia_add}/backend
-  npm install --force
+  npm ci
 EOF
 
   sleep 2
@@ -142,14 +142,10 @@ backend_update() {
   pm2 stop ${empresa_atualizar}-backend
   git pull
   cd /home/deploy/${empresa_atualizar}/backend
-  npm install
-  npm update -f
-  npm install @types/fs-extra
+  npm ci
   rm -rf dist 
   npm run build
   npx sequelize db:migrate
-  npx sequelize db:migrate
-  npx sequelize db:seed
   pm2 start ${empresa_atualizar}-backend
   pm2 save 
 EOF

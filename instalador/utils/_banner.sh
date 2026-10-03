@@ -20,16 +20,13 @@ print_banner() {
 
 
 printf "${GREEN}";
-printf "######   ######   ######   ##  ##   #####    ######   ######   ##  ##   ######   ######\n";
-printf "##  ##     ##     ##       ### ##   ##  ##   ##       ##  ##   ##  ##   ##  ##     ##\n";
-printf "##  ##     ##     ####     ######   ##  ##   ####     ##       ######   ##  ##     ##\n";
-printf "######     ##     ##       ## ###   ##  ##   ##       ##       ##  ##   ######     ##\n";
-printf "##  ##     ##     ##       ##  ##   ##  ##   ##       ##  ##   ##  ##   ##  ##     ##\n";
-printf "##  ##     ##     ######   ##  ##   #####    ######   ######   ##  ##   ##  ##     ##\n";
-
 printf "\n"
-
-printf "2024 @ Todos os direitos reservados a https://atendechat.com\n"
+printf "  ==============================================\n"
+printf "                 C O N V E R S A               \n"
+printf "                 E X P R E S S                 \n"
+printf "  ==============================================\n"
+printf "\n"
+printf "  ConversaExpress - Instalador\n"
 
 
 

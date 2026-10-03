@@ -11,7 +11,7 @@ get_mysql_root_password() {
 get_link_git() {
   
   print_banner
-  printf "${WHITE} 💻 Insira o link do GITHUB do Atendechat que deseja instalar:${GRAY_LIGHT}"
+  printf "${WHITE} 💻 Insira o link do GITHUB do ConversaExpress que deseja instalar:${GRAY_LIGHT}"
   printf "\n\n"
   read -p "> " link_git
 }
@@ -201,14 +201,14 @@ software_dominio() {
 inquiry_options() {
   
   print_banner
-  printf "${WHITE} 💻 Bem vindo(a) ao Gerenciador Atendechat, Selecione abaixo a proxima ação!${GRAY_LIGHT}"
+  printf "${WHITE} 💻 Bem vindo(a) ao Gerenciador ConversaExpress, Selecione abaixo a proxima ação!${GRAY_LIGHT}"
   printf "\n\n"
-  printf "   [0] Instalar Atendechat\n"
-  printf "   [1] Atualizar Atendechat\n"
-  printf "   [2] Deletar Atendechat\n"
-  printf "   [3] Bloquear Atendechat\n"
-  printf "   [4] Desbloquear Atendechat\n"
-  printf "   [5] Alter. dominio Atendechat\n"
+  printf "   [0] Instalar ConversaExpress\n"
+  printf "   [1] Atualizar ConversaExpress\n"
+  printf "   [2] Deletar ConversaExpress\n"
+  printf "   [3] Bloquear ConversaExpress\n"
+  printf "   [4] Desbloquear ConversaExpress\n"
+  printf "   [5] Alter. dominio ConversaExpress\n"
   printf "\n"
   read -p "> " option
 

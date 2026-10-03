@@ -171,7 +171,7 @@ const handleSendEmail = async (values) => {
             <img
               style={{ margin: "0 auto", height: "80px", width: "100%" }}
               src={logo}
-              alt="Whats"
+              alt="ConversaExpress"
             />
           </div>
           <Typography component="h1" variant="h5">

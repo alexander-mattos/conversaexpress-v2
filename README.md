@@ -1,22 +1,15 @@
-# Atendechat
+# ConversaExpress
 
-O Atendechat é uma empresa distribuidora de White Label que possui uma solução de atendimentos via Whatsapp que aumenta a produtividade e organização das equipes
+O ConversaExpress é uma plataforma de atendimento via WhatsApp para equipes: tickets, filas, chatbots, campanhas, chat interno e muito mais, em um único painel multiempresa.
 
 ## 🚀 Começando
 
-O repositório do Atendechat possui 3 pastas importantes:
-- backend
-- frontend
-- instalador
+O repositório possui 3 pastas:
+- **backend**: API em Express + TypeScript (Sequelize, Baileys, Bull, Socket.IO)
+- **frontend**: interface em React
+- **instalador**: scripts para instalação automática em servidores Ubuntu
 
-O backend é feito em Express e possui toda a estrutura organizada dentro dessa pasta para que seja aplicado no ambiente do cliente. A pasta de frontend contém todo o framework do React.js que gerencia toda a interação com o usuário do sistema.
-
-A pasta de instalador dentro dessa repositório é uma cópia do instalador usado para que os clientes de sistemas possam fazer o clone dentro da pasta home de seus servidores e seguirem com a instalação automática de todas as dependências do projeto
-
-Link para o repositório do instalador atualizado:
-- [Instalador](https://github.com/atendechat-org/instalador)
-
-Consulte **[Implantação](#-implanta%C3%A7%C3%A3o)** para saber como implantar o projeto.
+Consulte **[Implantação](#-implanta%C3%A7%C3%A3o-em-produ%C3%A7%C3%A3o)** para saber como implantar o projeto.
 
 ### 📋 Pré-requisitos
 
@@ -67,7 +60,7 @@ JWT_REFRESH_SECRET=${jwt_refresh_secret}
 
 REDIS_URI=redis://:${mysql_root_password}@127.0.0.1:${redis_port}
 REDIS_OPT_LIMITER_MAX=1
-REGIS_OPT_LIMITER_DURATION=3000
+REDIS_OPT_LIMITER_DURATION=3000
 
 USER_LIMIT=${max_user}
 CONNECTIONS_LIMIT=${max_whats}
@@ -95,11 +88,12 @@ REACT_APP_HOURS_CLOSE_TICKETS_AUTO = 24
 ```
 
 #### Instalando dependências
+Os dois projetos têm `package-lock.json`; use `npm ci` para instalar exatamente as versões testadas.
 ```
 cd backend/
-npm install --force
+npm ci
 cd frontend/
-npm install --force
+npm ci
 ```
 
 ### Rodando localmente
@@ -112,13 +106,17 @@ cd frontend/
 npm start
 ```
 
-## ⚙️ Executando os testes
+## ✅ Verificações (CI)
 
-//
+A cada push na `main` e em cada pull request, o GitHub Actions (`.github/workflows/ci.yml`) roda:
+- **backend**: `npm run typecheck` e `npm run build` (o `npm run lint` roda em modo informativo)
+- **frontend**: `npm run build`
 
-### 🔩 Analise os testes de ponta a ponta
-
-//
+Para rodar localmente:
+```
+cd backend/ && npm run typecheck && npm run build
+cd frontend/ && npm run build
+```
 
 ## 📦 Implantação em produção
 
@@ -135,7 +133,7 @@ cd /home/deploy/${empresa_atualizar}
 pm2 stop ${empresa_atualizar}-frontend
 git pull
 cd /home/deploy/${empresa_atualizar}/frontend
-npm install
+npm ci
 rm -rf build
 npm run build
 pm2 start ${empresa_atualizar}-frontend
@@ -147,37 +145,25 @@ cd /home/deploy/${empresa_atualizar}
 pm2 stop ${empresa_atualizar}-backend
 git pull
 cd /home/deploy/${empresa_atualizar}/backend
-npm install
-npm update -f
-npm install @types/fs-extra
-rm -rf dist 
+npm ci
+rm -rf dist
 npm run build
 npx sequelize db:migrate
-npx sequelize db:migrate
-npx sequelize db:seed
 pm2 start ${empresa_atualizar}-backend
 pm2 save 
 ```
 
 ## 🛠️ Construído com
 
-
 * [Express](https://expressjs.com/pt-br/) - O framework backend usado
 * [React](https://react.dev/) - Framework frontend usado
+* [Baileys](https://github.com/WhiskeySockets/Baileys) - Conexão com o WhatsApp
 * [NPM](https://www.npmjs.com/) - Gerenciador de dependências
 
-## 🖇️ Colaborando
-
-//
-
-## 📌 Versão
-
-Versão 1.0.0
+Baseado no projeto open source Whaticket/Atendechat.
 
 ## 📄 Licença
 
-Este projeto está sob a licença
+Este projeto está sob a licença MIT.
 
-⌨️ com ❤️ por [Atendechat](https://atendechat.com) 😊
-
-Todos os direitos reservados a https://atendechat.com
+⌨️ com ❤️ por ConversaExpress
