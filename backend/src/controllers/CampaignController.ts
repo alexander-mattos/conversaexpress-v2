@@ -1,4 +1,5 @@
 import * as Yup from "yup";
+import { assertRecordInCompany } from "../helpers/CompanyAccess";
 import { Request, Response } from "express";
 import { getIO } from "../libs/socket";
 import { head } from "lodash";
@@ -140,6 +141,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
+  await assertRecordInCompany(Campaign, id, req.user);
 
   const record = await ShowService(id);
 
@@ -164,6 +166,7 @@ export const update = async (
   }
 
   const { id } = req.params;
+  await assertRecordInCompany(Campaign, id, req.user);
 
   const record = await UpdateService({
     ...data,
@@ -185,6 +188,7 @@ export const cancel = async (
   res: Response
 ): Promise<Response> => {
   const { id } = req.params;
+  await assertRecordInCompany(Campaign, id, req.user);
 
   await CancelService(+id);
 
@@ -196,6 +200,7 @@ export const restart = async (
   res: Response
 ): Promise<Response> => {
   const { id } = req.params;
+  await assertRecordInCompany(Campaign, id, req.user);
 
   await RestartService(+id);
 
@@ -207,6 +212,7 @@ export const remove = async (
   res: Response
 ): Promise<Response> => {
   const { id } = req.params;
+  await assertRecordInCompany(Campaign, id, req.user);
   const { companyId } = req.user;
 
   await DeleteService(id);
@@ -235,6 +241,7 @@ export const mediaUpload = async (
   res: Response
 ): Promise<Response> => {
   const { id } = req.params;
+  await assertRecordInCompany(Campaign, id, req.user);
   const files = req.files as Express.Multer.File[];
   const file = head(files);
 
@@ -254,10 +261,11 @@ export const deleteMedia = async (
   res: Response
 ): Promise<Response> => {
   const { id } = req.params;
+  await assertRecordInCompany(Campaign, id, req.user);
 
   try {
     const campaign = await Campaign.findByPk(id);
-    const filePath = path.resolve("public", campaign.mediaPath);
+    const filePath = path.resolve("public", path.basename(campaign.mediaPath || ""));
     const fileExists = fs.existsSync(filePath);
     if (fileExists) {
       fs.unlinkSync(filePath);

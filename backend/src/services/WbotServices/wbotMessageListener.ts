@@ -21,7 +21,7 @@ import Contact from "../../models/Contact";
 import Ticket from "../../models/Ticket";
 import Message from "../../models/Message";
 
-import { getIO } from "../../libs/socket";
+import { getIO, queueRoom } from "../../libs/socket";
 import CreateMessageService from "../MessageServices/CreateMessageService";
 import { logger } from "../../utils/logger";
 import CreateOrUpdateContactService from "../ContactServices/CreateOrUpdateContactService";
@@ -911,7 +911,7 @@ const verifyMediaMessage = async (
     });
 
     io.to(`company-${ticket.companyId}-closed`)
-      .to(`queue-${ticket.queueId}-closed`)
+      .to(queueRoom(ticket.queueId, ticket.companyId, "closed"))
       .emit(`company-${ticket.companyId}-ticket`, {
         action: "delete",
         ticket,
@@ -919,7 +919,7 @@ const verifyMediaMessage = async (
       });
 
     io.to(`company-${ticket.companyId}-${ticket.status}`)
-      .to(`queue-${ticket.queueId}-${ticket.status}`)
+      .to(queueRoom(ticket.queueId, ticket.companyId, ticket.status))
       .to(ticket.id.toString())
       .emit(`company-${ticket.companyId}-ticket`, {
         action: "update",
@@ -976,7 +976,7 @@ export const verifyMessage = async (
     });
 
     io.to(`company-${ticket.companyId}-closed`)
-      .to(`queue-${ticket.queueId}-closed`)
+      .to(queueRoom(ticket.queueId, ticket.companyId, "closed"))
       .emit(`company-${ticket.companyId}-ticket`, {
         action: "delete",
         ticket,
@@ -984,7 +984,7 @@ export const verifyMessage = async (
       });
 
     io.to(`company-${ticket.companyId}-${ticket.status}`)
-      .to(`queue-${ticket.queueId}-${ticket.status}`)
+      .to(queueRoom(ticket.queueId, ticket.companyId, ticket.status))
       .emit(`company-${ticket.companyId}-ticket`, {
         action: "update",
         ticket,
@@ -1362,7 +1362,7 @@ export const handleRating = async (
   });
 
   io.to(`company-${ticket.companyId}-open`)
-    .to(`queue-${ticket.queueId}-open`)
+    .to(queueRoom(ticket.queueId, ticket.companyId, "open"))
     .emit(`company-${ticket.companyId}-ticket`, {
       action: "delete",
       ticket,
@@ -1370,7 +1370,7 @@ export const handleRating = async (
     });
 
   io.to(`company-${ticket.companyId}-${ticket.status}`)
-    .to(`queue-${ticket.queueId}-${ticket.status}`)
+    .to(queueRoom(ticket.queueId, ticket.companyId, ticket.status))
     .to(ticket.id.toString())
     .emit(`company-${ticket.companyId}-ticket`, {
       action: "update",
@@ -2253,7 +2253,7 @@ const verifyCampaignMessageAndCloseTicket = async (
     await ticket.update({ status: "closed" });
 
     io.to(`company-${ticket.companyId}-open`)
-      .to(`queue-${ticket.queueId}-open`)
+      .to(queueRoom(ticket.queueId, ticket.companyId, "open"))
       .emit(`company-${ticket.companyId}-ticket`, {
         action: "delete",
         ticket,
@@ -2261,7 +2261,7 @@ const verifyCampaignMessageAndCloseTicket = async (
       });
 
     io.to(`company-${ticket.companyId}-${ticket.status}`)
-      .to(`queue-${ticket.queueId}-${ticket.status}`)
+      .to(queueRoom(ticket.queueId, ticket.companyId, ticket.status))
       .to(ticket.id.toString())
       .emit(`company-${ticket.companyId}-ticket`, {
         action: "update",

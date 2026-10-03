@@ -1,4 +1,5 @@
 import { initWASocket } from "../../libs/wbot";
+import withoutSession from "../../helpers/WhatsappWithoutSession";
 import Whatsapp from "../../models/Whatsapp";
 import { wbotMessageListener } from "./wbotMessageListener";
 import { getIO } from "../../libs/socket";
@@ -15,7 +16,7 @@ export const StartWhatsAppSession = async (
   const io = getIO();
   io.to(`company-${whatsapp.companyId}-mainchannel`).emit("whatsappSession", {
     action: "update",
-    session: whatsapp
+    session: withoutSession(whatsapp)
   });
 
   try {

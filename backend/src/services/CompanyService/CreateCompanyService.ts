@@ -68,7 +68,7 @@ const CreateCompanyService = async (
     recurrence
   });
 
-  const passwordHash = await hash(password || "123456", 8);
+  const passwordHash = await hash(password || "123456", 10);
 
   await User.create({
     name: company.name,

@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { assertRecordInCompany } from "../helpers/CompanyAccess";
 import AppError from "../errors/AppError";
 
 import SetTicketMessagesAsRead from "../helpers/SetTicketMessagesAsRead";
@@ -90,6 +91,7 @@ export const remove = async (
   const { messageId } = req.params;
   const { companyId } = req.user;
 
+  await assertRecordInCompany(Message, messageId, req.user);
   const message = await DeleteWhatsAppMessage(messageId);
 
   const io = getIO();

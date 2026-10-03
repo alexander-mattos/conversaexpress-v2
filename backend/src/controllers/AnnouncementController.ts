@@ -180,7 +180,7 @@ export const deleteMedia = async (
 
   try {
     const announcement = await Announcement.findByPk(id);
-    const filePath = path.resolve("public", announcement.mediaPath);
+    const filePath = path.resolve("public", path.basename(announcement.mediaPath || ""));
     const fileExists = fs.existsSync(filePath);
     if (fileExists) {
       fs.unlinkSync(filePath);

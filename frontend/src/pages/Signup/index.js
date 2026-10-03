@@ -30,7 +30,6 @@ import { i18n } from "../../translate/i18n";
 
 import { openApi } from "../../services/api";
 import toastError from "../../errors/toastError";
-import moment from "moment";
 const Copyright = () => {
 	return (
 		<Typography variant="body2" color="textSecondary" align="center">
@@ -69,7 +68,7 @@ const UserSchema = Yup.object().shape({
 		.min(2, i18n.t("signup.formErrors.name.short"))
 		.max(50, i18n.t("signup.formErrors.name.long"))
 		.required(i18n.t("signup.formErrors.name.required")),
-	password: Yup.string().min(5, i18n.t("signup.formErrors.password.short")).max(50, i18n.t("signup.formErrors.password.long")),
+	password: Yup.string().min(8, i18n.t("signup.formErrors.password.short")).max(50, i18n.t("signup.formErrors.password.long")).required(i18n.t("signup.formErrors.password.required")),
 	email: Yup.string().email(i18n.t("signup.formErrors.email.invalid")).required(i18n.t("signup.formErrors.email.required")),
 });
 
@@ -86,12 +85,8 @@ const SignUp = () => {
 	const initialState = { name: "", email: "", phone: "", password: "", planId: "", };
 
 	const [user] = useState(initialState);
-	const dueDate = moment().add(3, "day").format();
+	// Vencimento, status e recorrência do período de teste são definidos pelo servidor.
 	const handleSignUp = async values => {
-		Object.assign(values, { recurrence: "MENSAL" });
-		Object.assign(values, { dueDate: dueDate });
-		Object.assign(values, { status: "t" });
-		Object.assign(values, { campaignsEnabled: true });
 		try {
 			await openApi.post("/companies/cadastro", values);
 			toast.success(i18n.t("signup.toasts.success"));

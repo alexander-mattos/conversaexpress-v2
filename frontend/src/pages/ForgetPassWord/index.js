@@ -106,18 +106,11 @@ const ForgetPassword = () => {
 const handleSendEmail = async (values) => {
   const email = values.email;
   try {
-    const response = await api.post(
-      `${process.env.REACT_APP_BACKEND_URL}/forgetpassword/${email}`
-    );
-    console.log("API Response:", response.data);
-
-    if (response.data.status === 404) {
-      toast.error(i18n.t("resetPassword.toasts.emailNotFound"));
-    } else {
-      toast.success(i18n.t("resetPassword.toasts.emailSent"));
-    }
+    await api.post(`${process.env.REACT_APP_BACKEND_URL}/forgetpassword`, {
+      email,
+    });
+    toast.success(i18n.t("resetPassword.toasts.emailSent"));
   } catch (err) {
-    console.log("API Error:", err);
     toastError(err);
   }
 };
@@ -130,14 +123,16 @@ const handleSendEmail = async (values) => {
 
     if (newPassword === confirmPassword) {
       try {
-        await api.post(
-          `${process.env.REACT_APP_BACKEND_URL}/resetpasswords/${email}/${token}/${newPassword}`
-        );
+        await api.post(`${process.env.REACT_APP_BACKEND_URL}/resetpasswords`, {
+          email,
+          token,
+          password: newPassword,
+        });
         setError(""); // Limpe o erro se não houver erro
         toast.success(i18n.t("resetPassword.toasts.passwordUpdated"));
         history.push("/login");
       } catch (err) {
-        console.log(err);
+        toastError(err);
       }
     }
   };

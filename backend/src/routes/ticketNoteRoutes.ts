@@ -1,5 +1,6 @@
 import express from "express";
 import isAuth from "../middleware/isAuth";
+import isSuper from "../middleware/isSuper";
 
 import * as TicketNoteController from "../controllers/TicketNoteController";
 
@@ -11,7 +12,7 @@ ticketNoteRoutes.get(
   TicketNoteController.findFilteredList
 );
 
-ticketNoteRoutes.get("/ticket-notes", isAuth, TicketNoteController.index);
+ticketNoteRoutes.get("/ticket-notes", isAuth, isSuper, TicketNoteController.index);
 
 ticketNoteRoutes.get("/ticket-notes/:id", isAuth, TicketNoteController.show);
 

@@ -1,4 +1,6 @@
 import { Request, Response } from "express";
+import { assertRecordInCompany } from "../helpers/CompanyAccess";
+import QueueIntegrations from "../models/QueueIntegrations";
 import { getIO } from "../libs/socket";
 import CreateQueueIntegrationService from "../services/QueueIntegrationServices/CreateQueueIntegrationService";
 import DeleteQueueIntegrationService from "../services/QueueIntegrationServices/DeleteQueueIntegrationService";
@@ -87,6 +89,7 @@ export const remove = async (
   const { integrationId } = req.params;
   const { companyId } = req.user;
 
+  await assertRecordInCompany(QueueIntegrations, integrationId, req.user);
   await DeleteQueueIntegrationService(integrationId);
 
   const io = getIO();

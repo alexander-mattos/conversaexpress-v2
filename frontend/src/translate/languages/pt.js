@@ -22,7 +22,8 @@ const messages = {
             long: "Nome muito longo",
           },
           password: {
-            short: "Senha muito curta",
+            short: "Senha muito curta (mínimo de 8 caracteres)",
+            required: "A senha é obrigatória",
             long: "Senha muito longa",
           },
           email: {
@@ -1592,6 +1593,18 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_INVALID_DATE: "Data inválida.",
+        ERR_INVALID_EMAIL: "Informe um e-mail válido.",
+        ERR_INVALID_RESET_TOKEN: "Código inválido ou expirado. Solicite um novo código.",
+        ERR_PASSWORD_TOO_SHORT: "A senha deve ter pelo menos 8 caracteres.",
+        ERR_PLAN_NOT_FOUND: "Plano não encontrado.",
+        ERR_EMAIL_ALREADY_EXISTS: "Este e-mail já está cadastrado.",
+        ERR_INVALID_UPLOAD_TYPE: "Destino de upload inválido.",
+        ERR_INVALID_FILE_TYPE: "Tipo de arquivo não permitido.",
+        ERR_UPLOAD_LIMIT_FILE_SIZE: "Arquivo muito grande (máximo de 100 MB).",
+        ERR_INVOICE_ALREADY_PAID: "Esta fatura já foi paga.",
+        ERR_WEBHOOK_CONFIG: "Não foi possível configurar o webhook de pagamento.",
+        ERR_TOO_MANY_REQUESTS: "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
         ERR_INTERNAL_SERVER_ERROR:
             "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde",
         ERR_NO_OTHER_WHATSAPP: "Deve haver pelo menos um WhatsApp padrão.",

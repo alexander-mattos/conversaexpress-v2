@@ -22,7 +22,8 @@ const messages = {
             long: "Nombre demasiado largo",
           },
           password: {
-            short: "Contraseña demasiado corta",
+            short: "Contraseña demasiado corta (mínimo 8 caracteres)",
+            required: "La contraseña es obligatoria",
             long: "Contraseña demasiado larga",
           },
           email: {
@@ -1528,6 +1529,18 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_INVALID_DATE: "Fecha inválida.",
+        ERR_INVALID_EMAIL: "Ingrese un correo electrónico válido.",
+        ERR_INVALID_RESET_TOKEN: "Código inválido o expirado. Solicite un nuevo código.",
+        ERR_PASSWORD_TOO_SHORT: "La contraseña debe tener al menos 8 caracteres.",
+        ERR_PLAN_NOT_FOUND: "Plan no encontrado.",
+        ERR_EMAIL_ALREADY_EXISTS: "Este correo electrónico ya está registrado.",
+        ERR_INVALID_UPLOAD_TYPE: "Destino de carga inválido.",
+        ERR_INVALID_FILE_TYPE: "Tipo de archivo no permitido.",
+        ERR_UPLOAD_LIMIT_FILE_SIZE: "Archivo demasiado grande (máximo 100 MB).",
+        ERR_INVOICE_ALREADY_PAID: "Esta factura ya fue pagada.",
+        ERR_WEBHOOK_CONFIG: "No fue posible configurar el webhook de pago.",
+        ERR_TOO_MANY_REQUESTS: "Demasiados intentos. Espere unos minutos e intente nuevamente.",
         ERR_INTERNAL_SERVER_ERROR: "Ocurrió un error inesperado. Por favor, intente nuevamente más tarde",
         ERR_NO_OTHER_WHATSAPP: "Debe haber al menos un WhatsApp predeterminado.",
         ERR_NO_DEF_WAPP_FOUND: "No se encontró WhatsApp predeterminado. Verifique la página de conexiones.",

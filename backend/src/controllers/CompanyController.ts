@@ -2,6 +2,7 @@ import * as Yup from "yup";
 import { Request, Response } from "express";
 // import { getIO } from "../libs/socket";
 import AppError from "../errors/AppError";
+import { assertCompanyAccess } from "../helpers/CompanyAccess";
 import Company from "../models/Company";
 import authConfig from "../config/auth";
 
@@ -14,6 +15,7 @@ import DeleteCompanyService from "../services/CompanyService/DeleteCompanyServic
 import FindAllCompaniesService from "../services/CompanyService/FindAllCompaniesService";
 import { verify } from "jsonwebtoken";
 import User from "../models/User";
+import Plan from "../models/Plan";
 import ShowPlanCompanyService from "../services/CompanyService/ShowPlanCompanyService";
 import ListCompaniesPlanService from "../services/CompanyService/ListCompaniesPlanService";
 
@@ -77,8 +79,58 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   return res.status(200).json(company);
 };
 
+// Período de teste do cadastro público (antes calculado no navegador).
+const SIGNUP_TRIAL_DAYS = Number(process.env.SIGNUP_TRIAL_DAYS || 3);
+
+// Cadastro público: só aceita os dados do formulário. Plano é validado e
+// vencimento, status e recorrência são definidos pelo servidor.
+export const signup = async (req: Request, res: Response): Promise<Response> => {
+  const { name, email, phone, password, planId } = req.body;
+
+  const schema = Yup.object().shape({
+    name: Yup.string().min(2).max(50).required(),
+    email: Yup.string().email().required(),
+    password: Yup.string().min(8).max(50).required(),
+    planId: Yup.number().integer().positive().required()
+  });
+
+  try {
+    await schema.validate({ name, email, password, planId });
+  } catch (err: any) {
+    throw new AppError(err.message);
+  }
+
+  const plan = await Plan.findByPk(planId);
+  if (!plan) {
+    throw new AppError("ERR_PLAN_NOT_FOUND", 400);
+  }
+
+  const emailInUse = await User.findOne({ where: { email } });
+  if (emailInUse) {
+    throw new AppError("ERR_EMAIL_ALREADY_EXISTS", 400);
+  }
+
+  const dueDate = new Date();
+  dueDate.setDate(dueDate.getDate() + SIGNUP_TRIAL_DAYS);
+
+  const company = await CreateCompanyService({
+    name,
+    email,
+    phone,
+    password,
+    planId: plan.id,
+    status: true,
+    campaignsEnabled: true,
+    recurrence: "MENSAL",
+    dueDate: dueDate.toISOString()
+  });
+
+  return res.status(200).json({ id: company.id, name: company.name });
+};
+
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
+  await assertCompanyAccess(id, req.user);
 
   const company = await ShowCompanyService(id);
 
@@ -120,6 +172,7 @@ export const updateSchedules = async (
 ): Promise<Response> => {
   const { schedules }: SchedulesData = req.body;
   const { id } = req.params;
+  await assertCompanyAccess(id, req.user);
 
   const company = await UpdateSchedulesService({
     id,

@@ -1,4 +1,5 @@
 import * as Yup from "yup";
+import { assertRecordInCompany } from "../helpers/CompanyAccess";
 import { Request, Response } from "express";
 import { getIO } from "../libs/socket";
 
@@ -80,6 +81,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
+  await assertRecordInCompany(QuickMessage, id, req.user);
 
   const record = await ShowService(id);
 
@@ -105,6 +107,7 @@ export const update = async (
   }
 
   const { id } = req.params;
+  await assertRecordInCompany(QuickMessage, id, req.user);
 
   const record = await UpdateService({
     ...data,
@@ -126,6 +129,7 @@ export const remove = async (
   res: Response
 ): Promise<Response> => {
   const { id } = req.params;
+  await assertRecordInCompany(QuickMessage, id, req.user);
   const { companyId } = req.user;
 
   await DeleteService(id);
@@ -154,6 +158,7 @@ export const mediaUpload = async (
   res: Response
 ): Promise<Response> => {
   const { id } = req.params;
+  await assertRecordInCompany(QuickMessage, id, req.user);
   const files = req.files as Express.Multer.File[];
   const file = head(files);
 
@@ -176,11 +181,13 @@ export const deleteMedia = async (
   res: Response
 ): Promise<Response> => {
   const { id } = req.params;
+  await assertRecordInCompany(QuickMessage, id, req.user);
   const { companyId } = req.user
 
   try {
     const quickmessage = await QuickMessage.findByPk(id);
-    const filePath = path.resolve("public","quickMessage",quickmessage.mediaName);
+    // mediaPath é o nome gravado em disco; mediaName é o nome original do cliente.
+    const filePath = path.resolve("public", "quickMessage", path.basename(quickmessage.mediaPath || ""));
     const fileExists = fs.existsSync(filePath);
     if (fileExists) {
       fs.unlinkSync(filePath);

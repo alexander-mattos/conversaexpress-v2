@@ -3,6 +3,7 @@ import { getIO } from "../libs/socket";
 
 import CheckSettingsHelper from "../helpers/CheckSettings";
 import AppError from "../errors/AppError";
+import { assertCompanyAccess, resolveCompanyId } from "../helpers/CompanyAccess";
 
 import CreateUserService from "../services/UserServices/CreateUserService";
 import ListUsersService from "../services/UserServices/ListUsersService";
@@ -93,6 +94,7 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
   const { userId } = req.params;
 
   const user = await ShowUserService(userId);
+  await assertCompanyAccess(user.companyId, req.user);
 
   return res.status(200).json(user);
 };
@@ -136,7 +138,7 @@ export const remove = async (
     throw new AppError("ERR_NO_PERMISSION", 403);
   }
 
-  await DeleteUserService(userId, companyId);
+  await DeleteUserService(userId, companyId, req.user.id);
 
   const io = getIO();
   io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-user`, {
@@ -149,10 +151,9 @@ export const remove = async (
 
 export const list = async (req: Request, res: Response): Promise<Response> => {
   const { companyId } = req.query;
-  const { companyId: userCompanyId } = req.user;
 
   const users = await SimpleListService({
-    companyId: companyId ? +companyId : userCompanyId
+    companyId: await resolveCompanyId(companyId as string, req.user)
   });
 
   return res.status(200).json(users);

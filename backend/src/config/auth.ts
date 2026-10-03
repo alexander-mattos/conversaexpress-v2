@@ -1,6 +1,15 @@
+// Sem fallback: um segredo padrão permitiria forjar tokens de qualquer usuário.
+const requireSecret = (name: string): string => {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`${name} não configurado. Defina-o no .env do backend.`);
+  }
+  return value;
+};
+
 export default {
-  secret: process.env.JWT_SECRET || "mysecret",
+  secret: requireSecret("JWT_SECRET"),
   expiresIn: "15m",
-  refreshSecret: process.env.JWT_REFRESH_SECRET || "myanothersecret",
+  refreshSecret: requireSecret("JWT_REFRESH_SECRET"),
   refreshExpiresIn: "7d"
 };

@@ -1,4 +1,7 @@
 import * as Yup from "yup";
+import { assertRecordInCompany } from "../helpers/CompanyAccess";
+import Ticket from "../models/Ticket";
+import Contact from "../models/Contact";
 import { Request, Response } from "express";
 import AppError from "../errors/AppError";
 import TicketNote from "../models/TicketNote";
@@ -68,6 +71,11 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     throw new AppError(err.message);
   }
 
+  await assertRecordInCompany(Ticket, newTicketNote.ticketId, req.user);
+  if (newTicketNote.contactId) {
+    await assertRecordInCompany(Contact, newTicketNote.contactId, req.user);
+  }
+
   const ticketNote = await CreateTicketNoteService({
     ...newTicketNote,
     userId
@@ -80,6 +88,7 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
 
   const ticketNote = await ShowTicketNoteService(id);
+  await assertRecordInCompany(Ticket, ticketNote.ticketId, req.user);
 
   return res.status(200).json(ticketNote);
 };
@@ -100,6 +109,9 @@ export const update = async (
     throw new AppError(err.message);
   }
 
+  const current = await ShowTicketNoteService(ticketNote.id);
+  await assertRecordInCompany(Ticket, current.ticketId, req.user);
+
   const recordUpdated = await UpdateTicketNoteService(ticketNote);
 
   return res.status(200).json(recordUpdated);
@@ -115,6 +127,9 @@ export const remove = async (
     throw new AppError("ERR_NO_PERMISSION", 403);
   }
 
+  const current = await ShowTicketNoteService(id);
+  await assertRecordInCompany(Ticket, current.ticketId, req.user);
+
   await DeleteTicketNoteService(id);
 
   return res.status(200).json({ message: "Observação removida" });
@@ -124,8 +139,11 @@ export const findFilteredList = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
+  const { contactId, ticketId } = req.query as QueryFilteredNotes;
+  await assertRecordInCompany(Ticket, ticketId, req.user);
+  await assertRecordInCompany(Contact, contactId, req.user);
+
   try {
-    const { contactId, ticketId } = req.query as QueryFilteredNotes;
     const notes: TicketNote[] = await FindNotesByContactIdAndTicketId({
       contactId,
       ticketId

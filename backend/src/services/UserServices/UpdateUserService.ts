@@ -39,9 +39,11 @@ const UpdateUserService = async ({
   const user = await ShowUserService(userId);
 
   const requestUser = await User.findByPk(requestUserId);
+  const requestIsSuper = !!requestUser?.super;
 
-  if (requestUser.super === false && userData.companyId !== companyId) {
-    throw new AppError("O usuário não pertence à esta empresa");
+  // Verifica a empresa do usuário-alvo, não o companyId enviado no corpo.
+  if (!requestIsSuper && (user.companyId !== companyId || user.super)) {
+    throw new AppError("ERR_NO_PERMISSION", 403);
   }
 
   const schema = Yup.object().shape({
@@ -66,7 +68,9 @@ const UpdateUserService = async ({
     profile,
     name,
     whatsappId: whatsappId || null,
-	allTicket
+	allTicket,
+    // Troca de senha invalida os refresh tokens já emitidos.
+    ...(password ? { tokenVersion: (user.tokenVersion || 0) + 1 } : {})
   });
 
   await user.$set("queues", queueIds);

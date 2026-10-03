@@ -22,7 +22,8 @@ const messages = {
 						long: "Name is too long",
 					},
 					password: {
-						short: "Password is too short",
+						short: "Password is too short (minimum 8 characters)",
+						required: "Password is required",
 						long: "Password is too long",
 					},
 					email: {
@@ -1563,6 +1564,18 @@ const messages = {
 				},
 			},
 			backendErrors: {
+				ERR_INVALID_DATE: "Invalid date.",
+				ERR_INVALID_EMAIL: "Please enter a valid email.",
+				ERR_INVALID_RESET_TOKEN: "Invalid or expired code. Please request a new one.",
+				ERR_PASSWORD_TOO_SHORT: "Password must be at least 8 characters long.",
+				ERR_PLAN_NOT_FOUND: "Plan not found.",
+				ERR_EMAIL_ALREADY_EXISTS: "This email is already registered.",
+				ERR_INVALID_UPLOAD_TYPE: "Invalid upload destination.",
+				ERR_INVALID_FILE_TYPE: "File type not allowed.",
+				ERR_UPLOAD_LIMIT_FILE_SIZE: "File too large (maximum 100 MB).",
+				ERR_INVOICE_ALREADY_PAID: "This invoice has already been paid.",
+				ERR_WEBHOOK_CONFIG: "Could not configure the payment webhook.",
+				ERR_TOO_MANY_REQUESTS: "Too many attempts. Please wait a few minutes and try again.",
 				ERR_INTERNAL_SERVER_ERROR: "An unexpected error occurred. Please try again later",
 				ERR_NO_OTHER_WHATSAPP: "There must be at least one default WhatsApp.",
 				ERR_NO_DEF_WAPP_FOUND: "No default WhatsApp found. Check the connections page.",

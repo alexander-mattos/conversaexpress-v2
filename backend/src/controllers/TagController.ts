@@ -1,4 +1,6 @@
 import { Request, Response } from "express";
+import { assertRecordInCompany } from "../helpers/CompanyAccess";
+import Tag from "../models/Tag";
 import { getIO } from "../libs/socket";
 
 import AppError from "../errors/AppError";
@@ -61,6 +63,7 @@ export const kanban = async (req: Request, res: Response): Promise<Response> => 
 
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { tagId } = req.params;
+  await assertRecordInCompany(Tag, tagId, req.user);
 
   const tag = await ShowService(tagId);
 
@@ -76,6 +79,7 @@ export const update = async (
   }
 
   const { tagId } = req.params;
+  await assertRecordInCompany(Tag, tagId, req.user);
   const tagData = req.body;
 
   const tag = await UpdateService({ tagData, id: tagId });
@@ -94,6 +98,7 @@ export const remove = async (
   res: Response
 ): Promise<Response> => {
   const { tagId } = req.params;
+  await assertRecordInCompany(Tag, tagId, req.user);
 
   await DeleteService(tagId);
 

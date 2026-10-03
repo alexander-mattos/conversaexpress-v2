@@ -1,4 +1,5 @@
 import * as Yup from "yup";
+import { assertCompanyAccess, assertRecordInCompany } from "../helpers/CompanyAccess";
 import { Request, Response } from "express";
 import { getIO } from "../libs/socket";
 
@@ -72,6 +73,7 @@ export const update = async (
   const { companyId } = req.user;
   const data = req.body;
   const { id } = req.params;
+  await assertRecordInCompany(Chat, id, req.user);
 
   const record = await UpdateService({
     ...data,
@@ -94,6 +96,7 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
 
   const record = await ShowFromUuidService(id);
+  await assertCompanyAccess(record.companyId, req.user);
 
   return res.status(200).json(record);
 };
@@ -103,6 +106,7 @@ export const remove = async (
   res: Response
 ): Promise<Response> => {
   const { id } = req.params;
+  await assertRecordInCompany(Chat, id, req.user);
   const { companyId } = req.user;
 
   await DeleteService(id);
@@ -123,6 +127,7 @@ export const saveMessage = async (
   const { companyId } = req.user;
   const { message } = req.body;
   const { id } = req.params;
+  await assertRecordInCompany(Chat, id, req.user);
   const senderId = +req.user.id;
   const chatId = +id;
 
@@ -162,6 +167,7 @@ export const checkAsRead = async (
   const { companyId } = req.user;
   const { userId } = req.body;
   const { id } = req.params;
+  await assertRecordInCompany(Chat, id, req.user);
 
   const chatUser = await ChatUser.findOne({ where: { chatId: id, userId } });
   await chatUser.update({ unreads: 0 });
@@ -193,6 +199,7 @@ export const messages = async (
 ): Promise<Response> => {
   const { pageNumber } = req.query as unknown as IndexQuery;
   const { id: chatId } = req.params;
+  await assertRecordInCompany(Chat, chatId, req.user);
   const ownerId = +req.user.id;
 
   const { records, count, hasMore } = await FindMessages({
