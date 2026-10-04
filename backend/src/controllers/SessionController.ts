@@ -3,7 +3,7 @@ import AppError from "../errors/AppError";
 import { getIO } from "../libs/socket";
 
 import AuthUserService from "../services/UserServices/AuthUserService";
-import { SendRefreshToken } from "../helpers/SendRefreshToken";
+import { SendRefreshToken, refreshCookieOptions } from "../helpers/SendRefreshToken";
 import { RefreshTokenService } from "../services/AuthServices/RefreshTokenService";
 import FindUserFromToken from "../services/AuthServices/FindUserFromToken";
 import User from "../models/User";
@@ -73,9 +73,11 @@ export const remove = async (
 ): Promise<Response> => {
   const { id } = req.user;
   const user = await User.findByPk(id);
-  await user.update({ online: false });
+  // Incrementar tokenVersion invalida o refresh token desta sessão.
+  await user.update({ online: false, tokenVersion: (user.tokenVersion || 0) + 1 });
 
-  res.clearCookie("jrt");
+  const { maxAge, ...cookieOptions } = refreshCookieOptions();
+  res.clearCookie("jrt", cookieOptions);
 
   return res.send();
 };

@@ -1,25 +1,39 @@
-import { v4 as uuid } from "uuid";
 import { Request, Response } from "express";
 import SendMail from "../services/ForgotPassWordServices/SendMail";
 import ResetPassword from "../services/ResetPasswordService/ResetPassword";
-type IndexQuery = { email?: string; token?: string; password?: string };
+import AppError from "../errors/AppError";
+
+type ForgotBody = { email?: string };
+type ResetBody = { email?: string; token?: string; password?: string };
+
 export const store = async (req: Request, res: Response): Promise<Response> => {
-  const { email } = req.params as IndexQuery;
-  const TokenSenha = uuid();
-  const forgotPassword = await SendMail(email, TokenSenha);
-  if (!forgotPassword) {
-     return res.status(200).json({ message: "E-mail enviado com sucesso" });
+  const { email } = req.body as ForgotBody;
+  if (!email || typeof email !== "string") {
+    throw new AppError("ERR_INVALID_EMAIL", 400);
   }
-  return res.status(404).json({ error: "E-mail enviado com sucesso" });
+
+  await SendMail(email.trim());
+
+  // Resposta idêntica exista ou não o e-mail.
+  return res.status(200).json({
+    message: "Se o e-mail estiver cadastrado, você receberá o código."
+  });
 };
+
 export const resetPasswords = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const { email, token, password } = req.params as IndexQuery;
-  const resetPassword = await ResetPassword(email, token, password);
-  if (!resetPassword) {
-    return res.status(200).json({ message: "Senha redefinida com sucesso" });
+  const { email, token, password } = req.body as ResetBody;
+  if (
+    typeof email !== "string" ||
+    typeof token !== "string" ||
+    typeof password !== "string"
+  ) {
+    throw new AppError("ERR_INVALID_RESET_TOKEN", 400);
   }
-  return res.status(404).json({ error: "Verifique o Token informado" });
+
+  await ResetPassword(email.trim(), token.trim(), password);
+
+  return res.status(200).json({ message: "Senha redefinida com sucesso" });
 };

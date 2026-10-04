@@ -1,4 +1,5 @@
 import * as Yup from "yup";
+import { assertRecordInCompany } from "../helpers/CompanyAccess";
 import { Request, Response } from "express";
 import { getIO } from "../libs/socket";
 
@@ -77,6 +78,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
+  await assertRecordInCompany(ContactListItem, id, req.user);
 
   const record = await ShowService(id);
 
@@ -101,6 +103,7 @@ export const update = async (
   }
 
   const { id } = req.params;
+  await assertRecordInCompany(ContactListItem, id, req.user);
 
   const record = await UpdateService({
     ...data,
@@ -121,6 +124,7 @@ export const remove = async (
   res: Response
 ): Promise<Response> => {
   const { id } = req.params;
+  await assertRecordInCompany(ContactListItem, id, req.user);
   const { companyId } = req.user;
 
   await DeleteService(id);

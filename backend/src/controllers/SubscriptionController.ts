@@ -9,7 +9,7 @@ import Company from "../models/Company";
 import Invoices from "../models/Invoices";
 import Subscriptions from "../models/Subscriptions";
 import { getIO } from "../libs/socket";
-import UpdateUserService from "../services/UserServices/UpdateUserService";
+import { logger } from "../utils/logger";
 
 const app = express();
 
@@ -26,40 +26,27 @@ export const createSubscription = async (
     const gerencianet = Gerencianet(options);
     const { companyId } = req.user;
 
-  const schema = Yup.object().shape({
-    price: Yup.string().required(),
-    users: Yup.string().required(),
-    connections: Yup.string().required()
-  });
+  const { invoiceId } = req.body;
 
-  if (!(await schema.isValid(req.body))) {
-    throw new AppError("Validation fails", 400);
+  // O valor cobrado vem da fatura no banco, nunca do corpo da requisição.
+  const invoice = await Invoices.findByPk(invoiceId);
+  if (!invoice || invoice.companyId !== companyId) {
+    throw new AppError("ERR_NO_PERMISSION", 403);
   }
-
-  const {
-    firstName,
-    price,
-    users,
-    connections,
-    address2,
-    city,
-    state,
-    zipcode,
-    country,
-    plan,
-    invoiceId
-  } = req.body;
+  if (invoice.status === "paid") {
+    throw new AppError("ERR_INVOICE_ALREADY_PAID", 400);
+  }
 
   const body = {
     calendario: {
       expiracao: 3600
     },
     valor: {
-      original: price.toLocaleString("pt-br", { minimumFractionDigits: 2 }).replace(",", ".")
+      original: Number(invoice.value).toFixed(2)
     },
     chave: process.env.GERENCIANET_PIX_KEY,
-    solicitacaoPagador: `#Fatura:${invoiceId}`
-    };
+    solicitacaoPagador: `#Fatura:${invoice.id}`
+  };
   try {
     const pix = await gerencianet.pixCreateImmediateCharge(null, body);
 
@@ -67,11 +54,6 @@ export const createSubscription = async (
       id: pix.loc.id
     });
 
-    const updateCompany = await Company.findOne();
-
-    if (!updateCompany) {
-      throw new AppError("Company not found", 404);
-    }
 
 
 /*     await Subscriptions.create({
@@ -136,7 +118,7 @@ export const createWebhook = async (
     const create = await gerencianet.pixConfigWebhook(params, body);
     return res.json(create);
   } catch (error) {
-    console.log(error);
+    throw new AppError("ERR_WEBHOOK_CONFIG", 400);
   }
 };
 
@@ -149,49 +131,45 @@ export const webhook = async (
   if (evento === "teste_webhook") {
     return res.json({ ok: true });
   }
-  if (req.body.pix) {
+  if (Array.isArray(req.body.pix)) {
     const gerencianet = Gerencianet(options);
-    req.body.pix.forEach(async (pix: any) => {
-      const detahe = await gerencianet.pixDetailCharge({
-        txid: pix.txid
-      });
+    for (const pix of req.body.pix) {
+      try {
+        // Os dados do corpo não são confiáveis: a cobrança é consultada na Efí.
+        const detalhe = await gerencianet.pixDetailCharge({ txid: pix.txid });
+        if (detalhe?.status !== "CONCLUIDA") continue;
 
-      if (detahe.status === "CONCLUIDA") {
-        const { solicitacaoPagador } = detahe;
-        const invoiceID = solicitacaoPagador.replace("#Fatura:", "");
-        const invoices = await Invoices.findByPk(invoiceID);
-        const companyId =invoices.companyId;
-        const company = await Company.findByPk(companyId);
+        const invoiceId = String(detalhe.solicitacaoPagador || "").replace("#Fatura:", "");
+        const invoice = await Invoices.findByPk(invoiceId);
+        // Idempotência: fatura já paga não estende o vencimento de novo.
+        if (!invoice || invoice.status === "paid") continue;
+
+        const paid = Number(detalhe.valor?.original);
+        if (!(paid >= Number(invoice.value))) {
+          logger.warn(`Pix ${pix.txid}: valor ${paid} menor que a fatura ${invoice.id}`);
+          continue;
+        }
+
+        const company = await Company.findByPk(invoice.companyId);
+        if (!company) continue;
 
         const expiresAt = new Date(company.dueDate);
         expiresAt.setDate(expiresAt.getDate() + 30);
         const date = expiresAt.toISOString().split("T")[0];
 
-        if (company) {
-          await company.update({
-            dueDate: date
-          });
-         const invoi = await invoices.update({
-            id: invoiceID,
-            status: 'paid'
-          });
-          await company.reload();
-          const io = getIO();
-          const companyUpdate = await Company.findOne({
-            where: {
-              id: companyId
-            }
-          });
+        await invoice.update({ status: "paid" });
+        await company.update({ dueDate: date });
+        await company.reload();
 
-          io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-payment`, {
-            action: detahe.status,
-            company: companyUpdate
-          });
-        }
-
+        const io = getIO();
+        io.to(`company-${company.id}-mainchannel`).emit(`company-${company.id}-payment`, {
+          action: detalhe.status,
+          company
+        });
+      } catch (err) {
+        logger.error(err, "Erro ao processar webhook Pix");
       }
-    });
-
+    }
   }
 
   return res.json({ ok: true });

@@ -1,40 +1,39 @@
 import nodemailer from "nodemailer";
-import sequelize from "sequelize";
+import { QueryTypes } from "sequelize";
 import database from "../../database";
-import Setting from "../../models/Setting";
-import { config } from "dotenv";
-config();
+import { logger } from "../../utils/logger";
+import { buildStoredToken, generateResetToken } from "./PasswordResetToken";
+
 interface UserData {
+  id: number;
   companyId: number;
 }
-const SendMail = async (email: string, tokenSenha: string) => {
-  const { hasResult, data } = await filterEmail(email);
-  if (!hasResult) {
-    return { status: 404, message: "Email não encontrado" };
+
+// Sempre resolve sem indicar se o e-mail existe, para não permitir
+// descobrir quais e-mails estão cadastrados.
+const SendMail = async (email: string): Promise<void> => {
+  const user = await findUserByEmail(email);
+  if (!user) {
+    return;
   }
-  const userData = data[0][0] as UserData;
-  if (!userData || userData.companyId === undefined) {
-    return { status: 404, message: "Dados do usuário não encontrados" };
-  }
-  const companyId = userData.companyId;
-  const urlSmtp = process.env.MAIL_HOST;
-  const userSmtp = process.env.MAIL_USER;
-  const passwordSmpt = process.env.MAIL_PASS;
-  const fromEmail = process.env.MAIL_FROM;
+
+  const tokenSenha = generateResetToken();
+  await saveToken(user.id, buildStoredToken(tokenSenha));
+
   const transporter = nodemailer.createTransport({
-    host: urlSmtp,
+    host: process.env.MAIL_HOST,
     port: Number(process.env.MAIL_PORT),
     secure: true,
-    auth: { user: userSmtp, pass: passwordSmpt }
+    auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS }
   });
-  if (hasResult === true) {
-    const { hasResults, datas } = await insertToken(email, tokenSenha);
-    async function sendEmail() {
+  const fromEmail = process.env.MAIL_FROM;
+
+  async function sendEmail() {
       try {
         const mailOptions = {
           from: fromEmail,
           to: email,
-          subject: "Redefinição de Senha - S-WhiteLabel",
+          subject: "Redefinição de Senha - ConversaExpress",
           html: ` <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html dir="ltr" lang="pt">
  <head>
@@ -145,7 +144,7 @@ a[x-apple-data-detectors] {
                       <td align="center" style="padding:0;Margin:0;padding-bottom:10px"><h1 style="Margin:0;line-height:36px;mso-line-height-rule:exactly;font-family:roboto, 'helvetica neue', helvetica, arial, sans-serif;font-size:30px;font-style:normal;font-weight:bold;color:#212121">Bem-vindo à Scripts WhiteLabel</h1></td>
                      </tr>
                      <tr>
-                      <td align="center" style="padding:0;Margin:0;padding-top:10px;padding-bottom:10px"><p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:roboto, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#131313;font-size:16px">Você solicitou recuperação de senha do Whaticket!</p></td>
+                      <td align="center" style="padding:0;Margin:0;padding-top:10px;padding-bottom:10px"><p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:roboto, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#131313;font-size:16px">Você solicitou recuperação de senha do ConversaExpress!</p></td>
                      </tr>
                    </table></td>
                  </tr>
@@ -222,27 +221,28 @@ a[x-apple-data-detectors] {
  </body>
 </html>`
         };
-        const info = await transporter.sendMail(mailOptions);
-        console.log("E-mail enviado: " + info.response);
+        await transporter.sendMail(mailOptions);
       } catch (error) {
-        console.log(error);
+        logger.error(error, "Erro ao enviar e-mail de redefinição de senha");
       }
     }
-    sendEmail();
-  }
+  // Sem await: o tempo de resposta não deve revelar se o e-mail existe.
+  sendEmail();
 };
-const filterEmail = async (email: string) => {
-  const sql = `SELECT * FROM "Users"  WHERE email ='${email}'`;
-  const result = await database.query(sql, {
-    type: sequelize.QueryTypes.SELECT
-  });
-  return { hasResult: result.length > 0, data: [result] };
+
+const findUserByEmail = async (email: string): Promise<UserData | null> => {
+  const users = await database.query<UserData>(
+    `SELECT id, "companyId" FROM "Users" WHERE email = :email LIMIT 1`,
+    { type: QueryTypes.SELECT, replacements: { email } }
+  );
+  return users[0] || null;
 };
-const insertToken = async (email: string, tokenSenha: string) => {
-  const sqls = `UPDATE "Users" SET "resetPassword"= '${tokenSenha}' WHERE email ='${email}'`;
-  const results = await database.query(sqls, {
-    type: sequelize.QueryTypes.UPDATE
-  });
-  return { hasResults: results.length > 0, datas: results };
+
+const saveToken = async (userId: number, storedToken: string): Promise<void> => {
+  await database.query(
+    `UPDATE "Users" SET "resetPassword" = :storedToken WHERE id = :userId`,
+    { type: QueryTypes.UPDATE, replacements: { storedToken, userId } }
+  );
 };
+
 export default SendMail;

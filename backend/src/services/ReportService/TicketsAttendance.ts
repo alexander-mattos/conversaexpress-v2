@@ -23,9 +23,12 @@ interface dataUser {
 
 export const TicketsAttendance = async ({ initialDate, finalDate, companyId }: Request): Promise<Return> => {
 
-  const sqlUsers = `select u.name from "Users" u where u."companyId" = ${companyId}`
+  const sqlUsers = `select u.name from "Users" u where u."companyId" = :companyId`
 
-  const users: dataUser[] = await sequelize.query(sqlUsers, { type: QueryTypes.SELECT });
+  const users: dataUser[] = await sequelize.query(sqlUsers, {
+    type: QueryTypes.SELECT,
+    replacements: { companyId }
+  });
 
   const sql = `
   select
@@ -35,17 +38,20 @@ export const TicketsAttendance = async ({ initialDate, finalDate, companyId }: R
     "TicketTraking" tt
     left join "Users" u on u.id = tt."userId"
   where
-    tt."companyId" = ${companyId}
+    tt."companyId" = :companyId
     and "ticketId" is not null
     and tt."userId" is not null
-    and tt."finishedAt" >= '${initialDate} 00:00:00'
-    and tt."finishedAt" <= '${finalDate} 23:59:59'
+    and tt."finishedAt" >= CAST(:initialDate AS timestamp)
+    and tt."finishedAt" <= CAST(:finalDate AS timestamp) + interval '1 day' - interval '1 second'
   group by
     nome
   ORDER BY
     nome asc`
 
-  const data: DataReturn[] = await sequelize.query(sql, { type: QueryTypes.SELECT });
+  const data: DataReturn[] = await sequelize.query(sql, {
+    type: QueryTypes.SELECT,
+    replacements: { companyId, initialDate, finalDate }
+  });
 
   users.map(user => {
     let indexCreated = data.findIndex((item) => item.nome === user.name);

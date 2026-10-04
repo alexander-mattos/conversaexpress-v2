@@ -1,4 +1,6 @@
 import { Request, Response } from "express";
+import { assertRecordInCompany } from "../helpers/CompanyAccess";
+import Files from "../models/Files";
 import { getIO } from "../libs/socket";
 
 import AppError from "../errors/AppError";
@@ -63,7 +65,7 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
 export const uploadMedias = async (req: Request, res: Response): Promise<Response> => {
   const { fileId, id, mediaType } = req.body;
   const files = req.files as Express.Multer.File[];
-  const file = head(files);
+  await assertRecordInCompany(Files, fileId, req.user);
 
   try {
     

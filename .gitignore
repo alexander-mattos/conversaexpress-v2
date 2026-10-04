@@ -1,0 +1,24 @@
+# Dependências
+node_modules/
+
+# Builds
+dist/
+build/
+.next/
+coverage/
+
+# Variáveis de ambiente e segredos
+.env
+.env.*
+!.env.example
+*.p12
+*.pem
+*.key
+
+# Configuração gerada pelo instalador (contém senhas)
+instalador/config
+
+# Logs e sistema
+*.log
+npm-debug.log*
+.DS_Store

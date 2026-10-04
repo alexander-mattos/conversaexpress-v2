@@ -5,7 +5,8 @@ import UpdateDeletedUserOpenTicketsStatus from "../../helpers/UpdateDeletedUserO
 
 const DeleteUserService = async (
   id: string | number,
-  companyId: number
+  companyId: number,
+  requestUserId?: string | number
 ): Promise<void> => {
   const user = await User.findOne({
     where: { id }
@@ -13,6 +14,11 @@ const DeleteUserService = async (
 
   if (!user) {
     throw new AppError("ERR_NO_USER_FOUND", 404);
+  }
+
+  const requestUser = requestUserId ? await User.findByPk(requestUserId) : null;
+  if (!requestUser?.super && (user.companyId !== companyId || user.super)) {
+    throw new AppError("ERR_NO_PERMISSION", 403);
   }
 
   const userOpenTickets: Ticket[] = await user.$get("tickets", {

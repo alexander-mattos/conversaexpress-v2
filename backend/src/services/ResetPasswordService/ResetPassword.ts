@@ -1,51 +1,56 @@
-import sequelize from "sequelize";
-import database from "../../database";
+import { QueryTypes } from "sequelize";
 import { hash } from "bcryptjs";
+import database from "../../database";
+import AppError from "../../errors/AppError";
+import { isResetTokenValid } from "../ForgotPassWordServices/PasswordResetToken";
+
+interface UserResetData {
+  id: number;
+  resetPassword: string | null;
+}
+
+export const MIN_PASSWORD_LENGTH = 8;
+
 const ResetPassword = async (
   email: string,
   token: string,
   password: string
-) => {
-  const { hasResult, data } = await filterUser(email, token);
-  if (!hasResult) {
-    return { status: 404, message: "Email não encontrado" };
+): Promise<void> => {
+  if (!password || password.length < MIN_PASSWORD_LENGTH) {
+    throw new AppError("ERR_PASSWORD_TOO_SHORT", 400);
   }
-  if (hasResult === true) {
-    try {
-      const convertPassword: string = await hash(password, 8);
-      const { hasResults, datas } = await insertHasPassword(
-        email,
-        token,
-        convertPassword
-      );
-      if (datas.length === 0) {
-        return { status: 404, message: "Token não encontrado" };
-      }
-    } catch (err) {
-      console.log(err);
+
+  const users = await database.query<UserResetData>(
+    `SELECT id, "resetPassword" FROM "Users" WHERE email = :email LIMIT 1`,
+    { type: QueryTypes.SELECT, replacements: { email } }
+  );
+  const user = users[0];
+
+  // Mesma resposta para e-mail inexistente e token inválido ou expirado.
+  if (!user || !isResetTokenValid(token, user.resetPassword)) {
+    throw new AppError("ERR_INVALID_RESET_TOKEN", 400);
+  }
+
+  const passwordHash = await hash(password, 10);
+
+  // O valor validado entra no WHERE: se outro pedido gravou um código novo
+  // entre a validação e este UPDATE, nenhuma linha muda e o código antigo
+  // não é aceito. Incrementar tokenVersion invalida os refresh tokens.
+  const affectedRows = await database.query(
+    `UPDATE "Users"
+        SET "passwordHash" = :passwordHash,
+            "resetPassword" = NULL,
+            "tokenVersion" = COALESCE("tokenVersion", 0) + 1
+      WHERE id = :id AND "resetPassword" = :storedToken`,
+    {
+      type: QueryTypes.BULKUPDATE,
+      replacements: { passwordHash, id: user.id, storedToken: user.resetPassword }
     }
+  );
+
+  if (Number(affectedRows) !== 1) {
+    throw new AppError("ERR_INVALID_RESET_TOKEN", 400);
   }
 };
+
 export default ResetPassword;
-const filterUser = async (email: string, token: string) => {
-  const sql = `SELECT * FROM "Users"  WHERE email = '${email}' AND "resetPassword" != ''`;
-  const result = await database.query(sql, {
-    type: sequelize.QueryTypes.SELECT
-  });
-  return { hasResult: result.length > 0, data: result };
-};
-const insertHasPassword = async (
-  email: string,
-  token: string,
-  convertPassword: string
-) => {
-  const sqlValida = `SELECT * FROM "Users"  WHERE email = '${email}' AND "resetPassword" = '${token}'`;
-  const resultado = await database.query(sqlValida, {
-    type: sequelize.QueryTypes.SELECT
-  });
-  const sqls = `UPDATE  "Users"  SET "passwordHash"= '${convertPassword}' , "resetPassword" = '' WHERE email= '${email}' AND "resetPassword" = '${token}'`;
-  const results = await database.query(sqls, {
-    type: sequelize.QueryTypes.UPDATE
-  });
-  return { hasResults: results.length > 0, datas: resultado };
-};

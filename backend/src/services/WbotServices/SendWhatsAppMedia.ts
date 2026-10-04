@@ -1,7 +1,7 @@
 import { WAMessage, AnyMessageContent } from "@whiskeysockets/baileys";
 import * as Sentry from "@sentry/node";
 import fs from "fs";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import path from "path";
 import ffmpegPath from "@ffmpeg-installer/ffmpeg";
 import AppError from "../../errors/AppError";
@@ -21,10 +21,15 @@ const publicFolder = path.resolve(__dirname, "..", "..", "..", "public");
 const processAudio = async (audio: string): Promise<string> => {
   const outputAudio = `${publicFolder}/${new Date().getTime()}.mp3`;
   return new Promise((resolve, reject) => {
-    exec(
-      `${ffmpegPath.path} -i ${audio} -vn -ab 128k -ar 44100 -f ipod ${outputAudio} -y`,
+    // execFile não usa shell: o nome do arquivo não é interpretado.
+    execFile(
+      ffmpegPath.path,
+      ["-i", audio, "-vn", "-ab", "128k", "-ar", "44100", "-f", "ipod", outputAudio, "-y"],
       (error, _stdout, _stderr) => {
-        if (error) reject(error);
+        if (error) {
+          reject(error);
+          return;
+        }
         fs.unlinkSync(audio);
         resolve(outputAudio);
       }
@@ -35,10 +40,14 @@ const processAudio = async (audio: string): Promise<string> => {
 const processAudioFile = async (audio: string): Promise<string> => {
   const outputAudio = `${publicFolder}/${new Date().getTime()}.mp3`;
   return new Promise((resolve, reject) => {
-    exec(
-      `${ffmpegPath.path} -i ${audio} -vn -ar 44100 -ac 2 -b:a 192k ${outputAudio}`,
+    execFile(
+      ffmpegPath.path,
+      ["-i", audio, "-vn", "-ar", "44100", "-ac", "2", "-b:a", "192k", outputAudio],
       (error, _stdout, _stderr) => {
-        if (error) reject(error);
+        if (error) {
+          reject(error);
+          return;
+        }
         fs.unlinkSync(audio);
         resolve(outputAudio);
       }

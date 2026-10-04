@@ -32,9 +32,9 @@ export const TicketsDayService = async ({ initialDate, finalDate, companyId }: R
     FROM
       "TicketTraking" tick
     WHERE
-      tick."companyId" = ${companyId}
-      and DATE(tick."createdAt") >= '${initialDate} 00:00:00'
-      AND DATE(tick."createdAt") <= '${finalDate} 23:59:59'
+      tick."companyId" = :companyId
+      and DATE(tick."createdAt") >= CAST(:initialDate AS date)
+      AND DATE(tick."createdAt") <= CAST(:finalDate AS date)
     GROUP BY
       extract(hour from tick."createdAt")
       --to_char(DATE(tick."createdAt"), 'dd-mm-YYYY')
@@ -49,9 +49,9 @@ export const TicketsDayService = async ({ initialDate, finalDate, companyId }: R
   FROM
     "TicketTraking" tick
   WHERE
-    tick."companyId" = ${companyId}
-    and DATE(tick."createdAt") >= '${initialDate}'
-    AND DATE(tick."createdAt") <= '${finalDate}'
+    tick."companyId" = :companyId
+    and DATE(tick."createdAt") >= CAST(:initialDate AS date)
+    AND DATE(tick."createdAt") <= CAST(:finalDate AS date)
   GROUP BY
     to_char(DATE(tick."createdAt"), 'dd/mm/YYYY')
   ORDER BY
@@ -59,7 +59,10 @@ export const TicketsDayService = async ({ initialDate, finalDate, companyId }: R
   `
   }
 
-  const data: DataReturn[] = await sequelize.query(sql, { type: QueryTypes.SELECT });
+  const data: DataReturn[] = await sequelize.query(sql, {
+    type: QueryTypes.SELECT,
+    replacements: { companyId, initialDate, finalDate }
+  });
 
   data.forEach((register) => {
     count += Number(register.total);

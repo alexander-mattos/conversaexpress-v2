@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { resolveCompanyId } from "../helpers/CompanyAccess";
 import { getIO } from "../libs/socket";
 import CreateQueueService from "../services/QueueService/CreateQueueService";
 import DeleteQueueService from "../services/QueueService/DeleteQueueService";
@@ -12,13 +13,9 @@ type QueueFilter = {
 };
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
-  const { companyId: userCompanyId } = req.user;
   const { companyId: queryCompanyId } = req.query as unknown as QueueFilter;
-  let companyId = userCompanyId;
-
-  if (!isNil(queryCompanyId)) {
-    companyId = +queryCompanyId;
-  }
+  // Só o super admin pode listar filas de outra empresa.
+  const companyId = await resolveCompanyId(queryCompanyId, req.user);
 
   const queues = await ListQueuesService({ companyId });
 

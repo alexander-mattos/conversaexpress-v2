@@ -142,9 +142,12 @@ const SocketManager = {
         console.warn("socket connected", params);
       })
       
-      this.currentSocket.onAny((event, ...args) => {
-        console.debug("Event: ", { socket: this.currentSocket, event, args });
-      });
+      // Os eventos trazem mensagens e dados de contatos: só loga em desenvolvimento.
+      if (process.env.NODE_ENV !== "production") {
+        this.currentSocket.onAny((event, ...args) => {
+          console.debug("Event: ", { socket: this.currentSocket, event, args });
+        });
+      }
       
       this.onReady(() => {
         this.socketReady = true;

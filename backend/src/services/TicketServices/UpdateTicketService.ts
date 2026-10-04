@@ -2,7 +2,7 @@ import moment from "moment";
 import * as Sentry from "@sentry/node";
 import CheckContactOpenTickets from "../../helpers/CheckContactOpenTickets";
 import SetTicketMessagesAsRead from "../../helpers/SetTicketMessagesAsRead";
-import { getIO } from "../../libs/socket";
+import { getIO, queueRoom } from "../../libs/socket";
 import Ticket from "../../models/Ticket";
 import Setting from "../../models/Setting";
 import Queue from "../../models/Queue";
@@ -133,7 +133,7 @@ const UpdateTicketService = async ({
           });
 
           io.to(`company-${ticket.companyId}-open`)
-            .to(`queue-${ticket.queueId}-open`)
+            .to(queueRoom(ticket.queueId, ticket.companyId, "open"))
             .to(ticketId.toString())
             .emit(`company-${ticket.companyId}-ticket`, {
               action: "delete",
@@ -296,7 +296,7 @@ const UpdateTicketService = async ({
     if (ticket.status !== oldStatus || ticket.user?.id !== oldUserId) {
 
       io.to(`company-${companyId}-${oldStatus}`)
-        .to(`queue-${ticket.queueId}-${oldStatus}`)
+        .to(queueRoom(ticket.queueId, ticket.companyId, oldStatus))
         .to(`user-${oldUserId}`)
         .emit(`company-${companyId}-ticket`, {
           action: "delete",
@@ -306,8 +306,8 @@ const UpdateTicketService = async ({
 
     io.to(`company-${companyId}-${ticket.status}`)
       .to(`company-${companyId}-notification`)
-      .to(`queue-${ticket.queueId}-${ticket.status}`)
-      .to(`queue-${ticket.queueId}-notification`)
+      .to(queueRoom(ticket.queueId, ticket.companyId, ticket.status))
+      .to(queueRoom(ticket.queueId, ticket.companyId, "notification"))
       .to(ticketId.toString())
       .to(`user-${ticket?.userId}`)
       .to(`user-${oldUserId}`)

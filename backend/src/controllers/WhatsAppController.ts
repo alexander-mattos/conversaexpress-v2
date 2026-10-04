@@ -1,4 +1,6 @@
 import { Request, Response } from "express";
+import AppError from "../errors/AppError";
+import withoutSession from "../helpers/WhatsappWithoutSession";
 import { getIO } from "../libs/socket";
 import { removeWbot } from "../libs/wbot";
 import { StartWhatsAppSession } from "../services/WbotServices/StartWhatsAppSession";
@@ -31,19 +33,26 @@ interface WhatsappData {
   expiresInactiveMessage?: string;
 }
 
+const ensureAdmin = (req: Request): void => {
+  if (req.user.profile !== "admin") {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+};
+
 interface QueryParams {
   session?: number | string;
 }
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
   const { companyId } = req.user;
-  const { session } = req.query as QueryParams;
-  const whatsapps = await ListWhatsAppsService({ companyId, session });
+  // A coluna session guarda as chaves do Baileys: nunca sai pela API.
+  const whatsapps = await ListWhatsAppsService({ companyId, session: 0 });
 
   return res.status(200).json(whatsapps);
 };
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
+  ensureAdmin(req);
   const {
     name,
     status,
@@ -91,25 +100,25 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   const io = getIO();
   io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-whatsapp`, {
     action: "update",
-    whatsapp
+    whatsapp: withoutSession(whatsapp)
   });
 
   if (oldDefaultWhatsapp) {
     io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-whatsapp`, {
       action: "update",
-      whatsapp: oldDefaultWhatsapp
+      whatsapp: withoutSession(oldDefaultWhatsapp)
     });
   }
 
-  return res.status(200).json(whatsapp);
+  return res.status(200).json(withoutSession(whatsapp));
 };
 
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { whatsappId } = req.params;
   const { companyId } = req.user;
-  const { session } = req.query;
+  // Nunca devolve a coluna session (chaves do Baileys).
 
-  const whatsapp = await ShowWhatsAppService(whatsappId, companyId, session);
+  const whatsapp = await ShowWhatsAppService(whatsappId, companyId, 0);
 
   return res.status(200).json(whatsapp);
 };
@@ -118,8 +127,10 @@ export const update = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
+  ensureAdmin(req);
   const { whatsappId } = req.params;
-  const whatsappData = req.body;
+  // O cliente não pode sobrescrever as chaves da sessão.
+  const { session: _session, ...whatsappData } = req.body;
   const { companyId } = req.user;
 
   const { whatsapp, oldDefaultWhatsapp } = await UpdateWhatsAppService({
@@ -131,23 +142,24 @@ export const update = async (
   const io = getIO();
   io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-whatsapp`, {
     action: "update",
-    whatsapp
+    whatsapp: withoutSession(whatsapp)
   });
 
   if (oldDefaultWhatsapp) {
     io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-whatsapp`, {
       action: "update",
-      whatsapp: oldDefaultWhatsapp
+      whatsapp: withoutSession(oldDefaultWhatsapp)
     });
   }
 
-  return res.status(200).json(whatsapp);
+  return res.status(200).json(withoutSession(whatsapp));
 };
 
 export const remove = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
+  ensureAdmin(req);
   const { whatsappId } = req.params;
   const { companyId } = req.user;
 

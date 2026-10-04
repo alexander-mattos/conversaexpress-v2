@@ -2,6 +2,7 @@ import * as Yup from "yup";
 import { Request, Response } from "express";
 // import { getIO } from "../libs/socket";
 import AppError from "../errors/AppError";
+import { assertCompanyAccess } from "../helpers/CompanyAccess";
 import Invoices from "../models/Invoices";
 
 import CreatePlanService from "../services/PlanService/CreatePlanService";
@@ -48,6 +49,7 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
   const { Invoiceid } = req.params;
 
   const invoice = await ShowInvoceService(Invoiceid);
+  await assertCompanyAccess(invoice.companyId, req.user);
 
   return res.status(200).json(invoice);
 };
@@ -76,7 +78,8 @@ export const update = async (
     throw new AppError(err.message);
   }
 
-  const { id, status } = InvoiceData;
+  const { status } = InvoiceData;
+  const { id } = req.params;
 
   const plan = await UpdateInvoiceService({
     id,

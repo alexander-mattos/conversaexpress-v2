@@ -7,6 +7,15 @@ import Queue from "../models/Queue";
 import Ticket from "../models/Ticket";
 import { verify } from "jsonwebtoken";
 import authConfig from "../config/auth";
+
+// Sala de eventos de uma fila. Tickets sem fila usam uma sala por empresa;
+// antes, "queue-null-*" era compartilhada entre todas as empresas.
+export const queueRoom = (
+  queueId: number | null | undefined,
+  companyId: number,
+  suffix: string
+): string =>
+  queueId ? `queue-${queueId}-${suffix}` : `company-${companyId}-queue-null-${suffix}`;
 import { CounterManager } from "./counter";
 
 let io: SocketIO;
@@ -102,7 +111,7 @@ export const initIO = (httpServer: Server): SocketIO => {
             socket.join(`queue-${queue.id}-notification`);
           });
           if (user.allTicket === "enabled") {
-            socket.join("queue-null-notification");
+            socket.join(`company-${user.companyId}-queue-null-notification`);
           }
 
         }
@@ -121,7 +130,7 @@ export const initIO = (httpServer: Server): SocketIO => {
             socket.leave(`queue-${queue.id}-notification`);
           });
           if (user.allTicket === "enabled") {
-            socket.leave("queue-null-notification");
+            socket.leave(`company-${user.companyId}-queue-null-notification`);
           }
         }
       }
@@ -139,7 +148,7 @@ export const initIO = (httpServer: Server): SocketIO => {
             socket.join(`queue-${queue.id}-pending`);
           });
           if (user.allTicket === "enabled") {
-            socket.join("queue-null-pending");
+            socket.join(`company-${user.companyId}-queue-null-pending`);
           }
         } else {
           logger.debug(`User ${user.id} cannot subscribe to ${status}`);
@@ -158,7 +167,7 @@ export const initIO = (httpServer: Server): SocketIO => {
             socket.leave(`queue-${queue.id}-pending`);
           });
           if (user.allTicket === "enabled") {
-            socket.leave("queue-null-pending");
+            socket.leave(`company-${user.companyId}-queue-null-pending`);
           }
         }
       }

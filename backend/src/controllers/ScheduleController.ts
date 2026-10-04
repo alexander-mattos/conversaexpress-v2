@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { assertRecordInCompany } from "../helpers/CompanyAccess";
 import { getIO } from "../libs/socket";
 
 import AppError from "../errors/AppError";
@@ -116,6 +117,7 @@ export const mediaUpload = async (
   res: Response
 ): Promise<Response> => {
   const { id } = req.params;
+  await assertRecordInCompany(Schedule, id, req.user);
   const files = req.files as Express.Multer.File[];
   const file = head(files);
 
@@ -136,10 +138,11 @@ export const deleteMedia = async (
   res: Response
 ): Promise<Response> => {
   const { id } = req.params;
+  await assertRecordInCompany(Schedule, id, req.user);
 
   try {
     const schedule = await Schedule.findByPk(id);
-    const filePath = path.resolve("public", schedule.mediaPath);
+    const filePath = path.resolve("public", path.basename(schedule.mediaPath || ""));
     const fileExists = fs.existsSync(filePath);
     if (fileExists) {
       fs.unlinkSync(filePath);

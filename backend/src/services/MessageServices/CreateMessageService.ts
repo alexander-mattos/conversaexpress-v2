@@ -1,4 +1,4 @@
-import { getIO } from "../../libs/socket";
+import { getIO, queueRoom } from "../../libs/socket";
 import Message from "../../models/Message";
 import Ticket from "../../models/Ticket";
 import Whatsapp from "../../models/Whatsapp";
@@ -62,8 +62,8 @@ const CreateMessageService = async ({
   io.to(message.ticketId.toString())
     .to(`company-${companyId}-${message.ticket.status}`)
     .to(`company-${companyId}-notification`)
-    .to(`queue-${message.ticket.queueId}-${message.ticket.status}`)
-    .to(`queue-${message.ticket.queueId}-notification`)
+    .to(queueRoom(message.ticket.queueId, companyId, message.ticket.status))
+    .to(queueRoom(message.ticket.queueId, companyId, "notification"))
     .emit(`company-${companyId}-appMessage`, {
       action: "create",
       message,

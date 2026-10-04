@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/node";
+import withoutSession from "../helpers/WhatsappWithoutSession";
 import makeWASocket, {
   WASocket,
   Browsers,
@@ -158,7 +159,7 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
                 await DeleteBaileysService(whatsapp.id);
                 io.to(`company-${whatsapp.companyId}-mainchannel`).emit(`company-${whatsapp.companyId}-whatsappSession`, {
                   action: "update",
-                  session: whatsapp
+                  session: withoutSession(whatsapp)
                 });
                 removeWbot(id, false);
               }
@@ -176,7 +177,7 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
                 await DeleteBaileysService(whatsapp.id);
                 io.to(`company-${whatsapp.companyId}-mainchannel`).emit(`company-${whatsapp.companyId}-whatsappSession`, {
                   action: "update",
-                  session: whatsapp
+                  session: withoutSession(whatsapp)
                 });
                 removeWbot(id, false);
                 setTimeout(
@@ -195,7 +196,7 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
 
               io.to(`company-${whatsapp.companyId}-mainchannel`).emit(`company-${whatsapp.companyId}-whatsappSession`, {
                 action: "update",
-                session: whatsapp
+                session: withoutSession(whatsapp)
               });
 
               const sessionIndex = sessions.findIndex(
@@ -218,7 +219,7 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
                 await DeleteBaileysService(whatsappUpdate.id);
                 io.to(`company-${whatsapp.companyId}-mainchannel`).emit("whatsappSession", {
                   action: "update",
-                  session: whatsappUpdate
+                  session: withoutSession(whatsappUpdate)
                 });
                 wsocket.ev.removeAllListeners("connection.update");
                 wsocket.ws.close();
@@ -244,7 +245,7 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
 
                 io.to(`company-${whatsapp.companyId}-mainchannel`).emit(`company-${whatsapp.companyId}-whatsappSession`, {
                   action: "update",
-                  session: whatsapp
+                  session: withoutSession(whatsapp)
                 });
               }
             }

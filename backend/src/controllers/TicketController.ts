@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
-import { getIO } from "../libs/socket";
+import { assertCompanyAccess } from "../helpers/CompanyAccess";
+import { getIO, queueRoom } from "../libs/socket";
 import Ticket from "../models/Ticket";
 
 import CreateTicketService from "../services/TicketServices/CreateTicketService";
@@ -175,6 +176,7 @@ export const showFromUUID = async (
   const { uuid } = req.params;
 
   const ticket: Ticket = await ShowTicketUUIDService(uuid);
+  await assertCompanyAccess(ticket.companyId, req.user);
 
   return res.status(200).json(ticket);
 };
@@ -213,8 +215,8 @@ export const remove = async (
   io.to(ticketId)
     .to(`company-${companyId}-${ticket.status}`)
     .to(`company-${companyId}-notification`)
-    .to(`queue-${ticket.queueId}-${ticket.status}`)
-    .to(`queue-${ticket.queueId}-notification`)
+    .to(queueRoom(ticket.queueId, companyId, ticket.status))
+    .to(queueRoom(ticket.queueId, companyId, "notification"))
     .emit(`company-${companyId}-ticket`, {
       action: "delete",
       ticketId: +ticketId

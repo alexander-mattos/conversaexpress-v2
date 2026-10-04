@@ -3,7 +3,7 @@ import AppError from "../../errors/AppError";
 import Company from "../../models/Company";
 import User from "../../models/User";
 import Setting from "../../models/Setting";
-import { hash } from "bcryptjs";
+import generatePassword from "../../helpers/GeneratePassword";
 
 interface CompanyData {
   name: string;
@@ -17,9 +17,15 @@ interface CompanyData {
   recurrence?: string;
 }
 
+interface CreateCompanyResult {
+  company: Company;
+  // Preenchida só quando a senha foi gerada aqui; deve ser mostrada uma vez.
+  generatedPassword?: string;
+}
+
 const CreateCompanyService = async (
   companyData: CompanyData
-): Promise<Company> => {
+): Promise<CreateCompanyResult> => {
   const {
     name,
     phone,
@@ -68,13 +74,13 @@ const CreateCompanyService = async (
     recurrence
   });
 
-  const passwordHash = await hash(password || "123456", 8);
+  const generatedPassword = password ? undefined : generatePassword();
 
+  // O hook do model User gera o passwordHash a partir de password.
   await User.create({
     name: company.name,
     email: company.email,
-    password: password,
-    passwordHash,
+    password: password || generatedPassword,
     profile: "admin",
     companyId: company.id
   });
@@ -303,7 +309,7 @@ const CreateCompanyService = async (
     }
   }
 
-  return company;
+  return { company, generatedPassword };
 };
 
 export default CreateCompanyService;

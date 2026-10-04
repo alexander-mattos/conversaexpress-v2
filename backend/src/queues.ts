@@ -778,19 +778,30 @@ async function handleInvoiceCreate() {
       if (dias < 20) {
         const plan = await Plan.findByPk(c.planId);
 
-        const sql = `SELECT COUNT(*) mycount FROM "Invoices" WHERE "companyId" = ${c.id} AND "dueDate"::text LIKE '${moment(dueDate).format("yyyy-MM-DD")}%';`
-        const invoice = await sequelize.query(sql,
-          { type: QueryTypes.SELECT }
-        );
+        const sql = `SELECT COUNT(*) mycount FROM "Invoices" WHERE "companyId" = :companyId AND "dueDate"::text LIKE :dueDatePrefix;`
+        const invoice = await sequelize.query(sql, {
+          type: QueryTypes.SELECT,
+          replacements: {
+            companyId: c.id,
+            dueDatePrefix: `${moment(dueDate).format("yyyy-MM-DD")}%`
+          }
+        });
         if (invoice[0]['mycount'] > 0) {
 
         } else {
           const sql = `INSERT INTO "Invoices" (detail, status, value, "updatedAt", "createdAt", "dueDate", "companyId")
-          VALUES ('${plan.name}', 'open', '${plan.value}', '${timestamp}', '${timestamp}', '${date}', ${c.id});`
+          VALUES (:detail, 'open', :value, :timestamp, :timestamp, :dueDate, :companyId);`
 
-          const invoiceInsert = await sequelize.query(sql,
-            { type: QueryTypes.INSERT }
-          );
+          const invoiceInsert = await sequelize.query(sql, {
+            type: QueryTypes.INSERT,
+            replacements: {
+              detail: plan.name,
+              value: plan.value,
+              timestamp,
+              dueDate: date,
+              companyId: c.id
+            }
+          });
 
           /*           let transporter = nodemailer.createTransport({
                       service: 'gmail',
