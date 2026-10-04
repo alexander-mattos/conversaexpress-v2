@@ -74,9 +74,9 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     throw new AppError(err.message);
   }
 
-  const company = await CreateCompanyService(newCompany);
+  const { company, generatedPassword } = await CreateCompanyService(newCompany);
 
-  return res.status(200).json(company);
+  return res.status(200).json({ ...company.toJSON(), generatedPassword });
 };
 
 // Período de teste do cadastro público (antes calculado no navegador).
@@ -113,7 +113,7 @@ export const signup = async (req: Request, res: Response): Promise<Response> => 
   const dueDate = new Date();
   dueDate.setDate(dueDate.getDate() + SIGNUP_TRIAL_DAYS);
 
-  const company = await CreateCompanyService({
+  const { company } = await CreateCompanyService({
     name,
     email,
     phone,

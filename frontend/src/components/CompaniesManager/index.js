@@ -14,6 +14,13 @@ import {
   TableRow,
   IconButton,
   Select,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Typography,
 } from "@material-ui/core";
 import { Formik, Form, Field } from "formik";
 import ButtonWithSpinner from "../ButtonWithSpinner";
@@ -499,6 +506,8 @@ export default function CompaniesManager() {
   const { list, save, update, remove } = useCompanies();
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  // Senha inicial gerada pelo backend: exibida uma única vez ao super admin.
+  const [generatedAccess, setGeneratedAccess] = useState(null);
   const [loading, setLoading] = useState(false);
   const [records, setRecords] = useState([]);
   const [record, setRecord] = useState({
@@ -534,7 +543,13 @@ export default function CompaniesManager() {
       if (data.id !== 0 && data.id !== undefined) {
         await update(data);
       } else {
-        await save(data);
+        const created = await save(data);
+        if (created?.generatedPassword) {
+          setGeneratedAccess({
+            email: created.email,
+            password: created.generatedPassword,
+          });
+        }
       }
 
       await loadPlans();
@@ -629,6 +644,39 @@ export default function CompaniesManager() {
       >
         {i18n.t("settings.company.confirmModal.message")}
       </ConfirmationModal>
+      <Dialog open={!!generatedAccess} onClose={() => setGeneratedAccess(null)}>
+        <DialogTitle>{i18n.t("settings.company.generatedPassword.title")}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {i18n.t("settings.company.generatedPassword.message")}
+          </DialogContentText>
+          <Typography variant="body2">
+            {i18n.t("settings.company.generatedPassword.email")}: <strong>{generatedAccess?.email}</strong>
+          </Typography>
+          <Typography variant="body2">
+            {i18n.t("settings.company.generatedPassword.password")}: <strong style={{ fontFamily: "monospace" }}>{generatedAccess?.password}</strong>
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            color="primary"
+            onClick={async () => {
+              if (!navigator.clipboard || !generatedAccess) return;
+              try {
+                await navigator.clipboard.writeText(generatedAccess.password);
+                toast.success(i18n.t("settings.company.generatedPassword.copied"));
+              } catch (err) {
+                // Sem permissão de área de transferência: a senha continua visível.
+              }
+            }}
+          >
+            {i18n.t("settings.company.generatedPassword.copy")}
+          </Button>
+          <Button color="primary" variant="contained" onClick={() => setGeneratedAccess(null)}>
+            {i18n.t("settings.company.generatedPassword.close")}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 }

@@ -1425,6 +1425,15 @@ const messages = {
 						error: "Could not complete operation. Check if company with same name exists or if fields were filled correctly",
 						success: "Operation completed successfully!",
 					},
+					generatedPassword: {
+						title: "Administrator access",
+						message: "This company was created with an automatically generated password. Write it down or copy it now: it will not be shown again.",
+						email: "Email",
+						password: "Password",
+						copy: "Copy password",
+						copied: "Password copied",
+						close: "Close",
+					},
 					confirmModal: {
 						title: "Delete Record",
 						confirm: "Do you really want to delete this record?",

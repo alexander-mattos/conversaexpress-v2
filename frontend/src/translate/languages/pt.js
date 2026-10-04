@@ -1452,6 +1452,15 @@ const messages = {
                 "Não foi possível realizar a operação. Verifique se já existe uma empresa com o mesmo nome ou se os campos foram preenchidos corretamente",
             success: "Operação realizada com sucesso!",
           },
+          generatedPassword: {
+            title: "Acesso do administrador",
+            message: "Esta empresa foi criada com uma senha gerada automaticamente. Anote ou copie agora: ela não será exibida novamente.",
+            email: "E-mail",
+            password: "Senha",
+            copy: "Copiar senha",
+            copied: "Senha copiada",
+            close: "Fechar",
+          },
           confirmModal: {
             title: "Exclusão de Registro",
             confirm: "Deseja realmente excluir esse registro?",
