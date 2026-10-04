@@ -27,7 +27,14 @@ const CreateService = async (data: Data): Promise<QuickMessage> => {
     throw new AppError(err.message);
   }
 
-  const record = await QuickMessage.create({ ...data });
+  // Só os campos do formulário: mediaPath/mediaName vêm do upload (antes o
+  // corpo podia apontar para o arquivo de outra empresa e depois apagá-lo).
+  const record = await QuickMessage.create({
+    shortcode: data.shortcode,
+    message: data.message,
+    companyId: data.companyId,
+    userId: data.userId
+  });
 
   return record;
 };

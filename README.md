@@ -130,13 +130,18 @@ Já migrado:
 - login, cadastro, esqueci a senha, layout (menu e barra superior) e Dashboard;
 - atendimentos: lista de tickets (abas, filtros, busca, novo ticket), notificações com som,
   conversa (mensagens, envio de texto/arquivos/áudio/emoji, respostas rápidas, transferir, agendar, tags)
-  e painel do contato (dados, edição e observações).
+  e painel do contato (dados, edição e observações);
+- uso diário: Contatos (com importação de planilha e exportação de todos em CSV), Respostas Rápidas,
+  Tags, Agendamentos (calendário), Tarefas e Ajuda.
 As demais telas aparecem no menu e abrem uma página "em migração" com link para a mesma tela no frontend atual.
 
 Diferenças em relação ao frontend atual:
 - o access token fica **só em memória**, nunca no `localStorage`;
 - ao recarregar a página, a sessão é renovada pelo cookie httpOnly de refresh;
 - o socket envia o token no `auth` do handshake, e não mais na URL.
+- as Tarefas ficam no navegador por usuário (`tasks:<empresa>:<usuário>`); a lista antiga (`tasks`, compartilhada
+  por todos do computador) passa uma vez para o primeiro usuário que abrir a tela;
+- excluir contatos e importar contatos (planilha ou telefone) passam a ser só para admin, também na API.
 
 `.env` (copie de `.env.example`; as variáveis `NEXT_PUBLIC_*` entram no build):
 ```
@@ -161,6 +166,13 @@ Para usar os dois frontends ao mesmo tempo (homologação), mantenha o `FRONTEND
 e adicione o endereço do frontend-next em `FRONTEND_EXTRA_ORIGINS` (lista separada por vírgula, para CORS e socket).
 
 ## 📦 Implantação em produção
+
+**Atenção (segurança):** versões anteriores gravavam os contatos do celular em `backend/public/contatos_antes.txt`
+e `backend/public/contatos_depois.txt`, acessíveis pela URL pública do backend. A versão atual não grava mais esses
+arquivos; apague os existentes em cada instalação:
+```
+rm -f backend/public/contatos_antes.txt backend/public/contatos_depois.txt
+```
 
 Para correta implantação é necessário realizar uma atualização do código fonte da aplicação e criar novamente os arquivos da pasta dist/
 

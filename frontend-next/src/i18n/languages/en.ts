@@ -1277,6 +1277,7 @@ const messages = {
 			},
 			helps: {
 				title: "Help Center",
+				empty: "No help videos yet.",
 			},
 			schedules: {
 				title: "Schedules",

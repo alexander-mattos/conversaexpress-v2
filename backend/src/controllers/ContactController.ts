@@ -91,29 +91,33 @@ export const storeUpload = async (req: Request, res: Response) : Promise<Respons
   const {companyId} = req.user;
   const contacts = req.body;
 
-  let errorBag = [];
-  let contactAdded = [];
+  if (!Array.isArray(contacts)) {
+    throw new AppError("ERR_INVALID_CONTACTS_UPLOAD", 400);
+  }
+
+  const errorBag = [];
+  const contactAdded = [];
 
   const schema = Yup.object().shape({
     name: Yup.string().required(),
     number: Yup.string().required()
   });
 
-  const promises = contacts.map(async contact => {
-
-    const newContact : ContactData = {name: contact.Nome, number: contact.Telefone.replace(/\D/g, '')}
-
-    try{
-
-      const contact = await createUploadedContact( newContact, companyId, schema )
-      contactAdded.push( {contactName: contact.name, contactId: contact.id} );
-
-    }catch(e){
-      errorBag.push({contactName: contact.Nome, error: e || e.message});
+  // Uma linha por vez: uma linha inválida vai para o errorBag e não derruba
+  // a importação (antes, "Telefone" numérico quebrava tudo com 500).
+  for (const row of contacts) {
+    const rowName = row?.Nome;
+    try {
+      const newContact: ContactData = {
+        name: rowName === undefined || rowName === null ? "" : String(rowName),
+        number: String(row?.Telefone ?? "").replace(/\D/g, "")
+      };
+      const contact = await createUploadedContact(newContact, companyId, schema);
+      contactAdded.push({ contactName: contact.name, contactId: contact.id });
+    } catch (e) {
+      errorBag.push({ contactName: rowName, error: e?.message || e });
     }
-  });
-
-  await Promise.all(promises);
+  }
 
   return res.status(200).json({newContacts: contactAdded, errorBag: errorBag});
 }
