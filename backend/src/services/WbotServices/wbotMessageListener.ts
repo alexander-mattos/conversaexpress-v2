@@ -30,7 +30,6 @@ import FindOrCreateTicketService from "../TicketServices/FindOrCreateTicketServi
 import ShowWhatsAppService from "../WhatsappService/ShowWhatsAppService";
 import UpdateTicketService from "../TicketServices/UpdateTicketService";
 import formatBody from "../../helpers/Mustache";
-import { Store } from "../../libs/store";
 import TicketTraking from "../../models/TicketTraking";
 import UserRating from "../../models/UserRating";
 import SendWhatsAppMessage from "./SendWhatsAppMessage";
@@ -65,7 +64,6 @@ const fs = require("fs");
 
 type Session = WASocket & {
   id?: number;
-  store?: Store;
 };
 
 // Um cliente por chave de API: trocar a chave no prompt passa a valer sem
@@ -2269,7 +2267,7 @@ const filterMessages = (msg: WAMessage): boolean => {
       WAMessageStubType.E2E_DEVICE_CHANGED,
       WAMessageStubType.E2E_IDENTITY_CHANGED,
       WAMessageStubType.CIPHERTEXT
-    ].includes(msg.messageStubType as WAMessageStubType)
+    ].includes(msg.messageStubType as number)
   )
     return false;
 

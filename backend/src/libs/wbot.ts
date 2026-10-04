@@ -6,11 +6,9 @@ import makeWASocket, {
   DisconnectReason,
   fetchLatestBaileysVersion,
   makeCacheableSignalKeyStore,
-  makeInMemoryStore,
   isJidBroadcast,
   CacheStore
 } from "@whiskeysockets/baileys";
-import makeWALegacySocket from "@whiskeysockets/baileys";
 import P from "pino";
 
 import Whatsapp from "../models/Whatsapp";
@@ -20,17 +18,16 @@ import authState from "../helpers/authState";
 import { Boom } from "@hapi/boom";
 import AppError from "../errors/AppError";
 import { getIO } from "./socket";
-import { Store } from "./store";
 import { StartWhatsAppSession } from "../services/WbotServices/StartWhatsAppSession";
 import DeleteBaileysService from "../services/BaileysServices/DeleteBaileysService";
 import NodeCache from 'node-cache';
+import { getStoredMessage } from "../helpers/GetStoredMessage";
 
 const loggerBaileys = MAIN_LOGGER.child({});
 loggerBaileys.level = "error";
 
 type Session = WASocket & {
   id?: number;
-  store?: Store;
 };
 
 const sessions: Session[] = [];
@@ -88,10 +85,6 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
         let retriesQrCode = 0;
 
         let wsocket: Session = null;
-        const store = makeInMemoryStore({
-          logger: loggerBaileys
-        });
-
         const { state, saveState } = await authState(whatsapp);
 
         const msgRetryCounterCache = new NodeCache();
@@ -111,6 +104,9 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
           // keepAliveIntervalMs: 1000 * 60 * 10 * 3,
           msgRetryCounterCache,
           shouldIgnoreJid: jid => isJidBroadcast(jid),
+          // Usado pelo Baileys para reenviar mensagens quando o destinatário
+          // pede nova tentativa de descriptografia.
+          getMessage: getStoredMessage,
         });
 
         // wsocket = makeWASocket({
@@ -252,8 +248,6 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
           }
         );
         wsocket.ev.on("creds.update", saveState);
-
-        store.bind(wsocket.ev);
       })();
     } catch (error) {
       Sentry.captureException(error);
