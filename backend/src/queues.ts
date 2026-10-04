@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/node";
-import BullQueue from "bull";
+import { Job, Queue, Worker } from "bullmq";
+import IORedis from "ioredis";
 import { MessageData, SendMessage } from "./helpers/SendMessage";
 import Whatsapp from "./models/Whatsapp";
 import { logger } from "./utils/logger";
@@ -28,12 +29,17 @@ import FilesOptions from './models/FilesOptions';
 import { addSeconds, differenceInSeconds } from "date-fns";
 import formatBody from "./helpers/Mustache";
 import { ClosedAllOpenTickets } from "./services/WbotServices/wbotClosedTickets";
+import { TransferTicketQueue } from "./wbotTransferTicketQueue";
 
 
 const nodemailer = require('nodemailer');
-const CronJob = require('cron').CronJob;
 
-const connection = process.env.REDIS_URI || "";
+// BullMQ exige maxRetriesPerRequest: null nas conexões dos workers.
+const connection = new IORedis(process.env.REDIS_URI || "", {
+  maxRetriesPerRequest: null
+});
+// Prefixo próprio: o Bull 4 e o BullMQ usam formatos incompatíveis sob "bull:".
+const prefix = "bullmq";
 const limiterMax = process.env.REDIS_OPT_LIMITER_MAX || 1;
 const limiterDuration = process.env.REDIS_OPT_LIMITER_DURATION || 3000;
 
@@ -55,24 +61,22 @@ interface DispatchCampaignData {
   contactListItemId: number;
 }
 
-export const userMonitor = new BullQueue("UserMonitor", connection);
+// Jobs concluídos/falhos são removidos por idade (substitui a limpeza manual).
+const defaultJobOptions = {
+  removeOnComplete: { age: 12 * 3600 },
+  removeOnFail: { age: 24 * 3600 }
+};
+const queueOptions = { connection, prefix, defaultJobOptions };
 
-export const queueMonitor = new BullQueue("QueueMonitor", connection);
-
-export const messageQueue = new BullQueue("MessageQueue", connection, {
-  limiter: {
-    max: limiterMax as number,
-    duration: limiterDuration as number
-  }
-});
-
-export const scheduleMonitor = new BullQueue("ScheduleMonitor", connection);
-export const sendScheduledMessages = new BullQueue(
+export const messageQueue = new Queue("MessageQueue", queueOptions);
+export const sendScheduledMessages = new Queue(
   "SendSacheduledMessages",
-  connection
+  queueOptions
 );
-
-export const campaignQueue = new BullQueue("CampaignQueue", connection);
+export const campaignQueue = new Queue("CampaignQueue", queueOptions);
+// Tarefas periódicas: agendadores guardados no Redis rodam uma única vez,
+// mesmo com vários processos (antes, crons em memória rodavam em cada um).
+export const maintenanceQueue = new Queue("Maintenance", queueOptions);
 
 async function handleSendMessage(job) {
   try {
@@ -198,23 +202,16 @@ async function handleSendMessage(job) {
   }
 }; */}
 
-async function handleCloseTicketsAutomatic() {
-  const job = new CronJob('*/1 * * * *', async () => {
-    const companies = await Company.findAll();
-    companies.map(async c => {
-
-      try {
-        const companyId = c.id;
-        await ClosedAllOpenTickets(companyId);
-      } catch (e: any) {
-        Sentry.captureException(e);
-        logger.error("ClosedAllOpenTickets -> Verify: error", e.message);
-        throw e;
-      }
-
-    });
-  });
-  job.start()
+async function closeTicketsAutomatic() {
+  const companies = await Company.findAll();
+  for (const c of companies) {
+    try {
+      await ClosedAllOpenTickets(c.id);
+    } catch (e: any) {
+      Sentry.captureException(e);
+      logger.error("ClosedAllOpenTickets -> Verify: error", e.message);
+    }
+  }
 }
 
 async function handleVerifySchedules(job) {
@@ -283,7 +280,6 @@ async function handleSendScheduledMessage(job) {
     });
 
     logger.info(`Mensagem agendada enviada para: ${schedule.contact.name}`);
-    sendScheduledMessages.clean(15000, "completed");
   } catch (e: any) {
     Sentry.captureException(e);
     await scheduleRecord?.update({
@@ -759,13 +755,10 @@ async function handleLoginStatus(job) {
 }
 
 
-async function handleInvoiceCreate() {
-  logger.info("Iniciando geração de boletos");
-  const job = new CronJob('*/5 * * * * *', async () => {
-
-
-    const companies = await Company.findAll();
-    companies.map(async c => {
+async function createInvoices() {
+  const companies = await Company.findAll();
+  for (const c of companies) {
+    try {
       var dueDate = c.dueDate;
       const date = moment(dueDate).format();
       const timestamp = moment().format();
@@ -839,107 +832,107 @@ async function handleInvoiceCreate() {
 
 
       }
-
-    });
-  });
-  job.start()
-}
-
-handleCloseTicketsAutomatic()
-
-handleInvoiceCreate()
-
-export async function startQueueProcess() {
-
-  logger.info("[🏁] - Iniciando processamento de filas");
-
-  messageQueue.process("SendMessage", handleSendMessage);
-
-  scheduleMonitor.process("Verify", handleVerifySchedules);
-
-  sendScheduledMessages.process("SendMessage", handleSendScheduledMessage);
-
-  userMonitor.process("VerifyLoginStatus", handleLoginStatus);
-
-
-  campaignQueue.process("VerifyCampaigns", 1, handleVerifyCampaigns);
-
-  campaignQueue.process("ProcessCampaign", 1, handleProcessCampaign);
-
-  campaignQueue.process("PrepareContact", 1, handlePrepareContact);
-
-  campaignQueue.process("DispatchCampaign", 1, handleDispatchCampaign);
-  
-
-  //queueMonitor.process("VerifyQueueStatus", handleVerifyQueue);
-
-  async function cleanupCampaignQueue() {
-    try {
-      await campaignQueue.clean(12 * 3600 * 1000, 'completed');
-      await campaignQueue.clean(24 * 3600 * 1000, 'failed');
-      
-      const jobs = await campaignQueue.getJobs(['waiting', 'active']);
-      for (const job of jobs) {
-        if (Date.now() - job.timestamp > 24 * 3600 * 1000) {
-          await job.remove();
-        }
-      }
-    } catch (error) {
-      logger.error('[🚨] - Erro na limpeza da fila de campanhas:', error);
+    } catch (e: any) {
+      Sentry.captureException(e);
+      logger.error(`Geração de fatura da empresa ${c.id}: ${e.message}`);
     }
   }
-  setInterval(cleanupCampaignQueue, 6 * 3600 * 1000);
+}
 
-  setInterval(async () => {
-    const jobCounts = await campaignQueue.getJobCounts();
-    const memoryUsage = process.memoryUsage();
-    
-    logger.info('[📌] - Status da fila de campanhas:', {
-      jobs: jobCounts,
-      memory: {
-        heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + 'MB',
-        heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + 'MB'
+type Processors = Record<string, (job: Job) => Promise<unknown>>;
+
+const workers: Worker[] = [];
+
+const startWorker = (
+  queue: Queue,
+  processors: Processors,
+  options: { concurrency?: number; limiter?: { max: number; duration: number } } = {}
+): void => {
+  const worker = new Worker(
+    queue.name,
+    async job => {
+      const processor = processors[job.name];
+      if (!processor) {
+        logger.warn(`[fila ${queue.name}] job sem processador: ${job.name}`);
+        return undefined;
       }
-    });
-  }, 5 * 60 * 1000);
+      return processor(job);
+    },
+    { connection, prefix, ...options }
+  );
+  worker.on("failed", (job, err) => {
+    logger.error(`[fila ${queue.name}] ${job?.name} falhou: ${err.message}`);
+  });
+  workers.push(worker);
+};
 
-  campaignQueue.on('completed', (job) => {
-    logger.info(`[📌] -   Campanha ${job.id} completada em ${Date.now() - job.timestamp}ms`);
+// Agendadores (idempotentes): o mesmo id apenas atualiza o padrão existente.
+export const JOB_SCHEDULERS = [
+  { id: "verify-schedules", pattern: "*/5 * * * * *", name: "VerifySchedules" },
+  { id: "verify-campaigns", pattern: "*/20 * * * * *", name: "VerifyCampaigns" },
+  { id: "verify-login-status", pattern: "* * * * *", name: "VerifyLoginStatus" },
+  { id: "close-tickets", pattern: "* * * * *", name: "CloseTicketsAutomatic" },
+  { id: "transfer-tickets", pattern: "* * * * *", name: "TransferTickets" },
+  // Antes rodava a cada 5 s; a fatura é gerada até 20 dias antes do vencimento.
+  { id: "create-invoices", pattern: "*/5 * * * *", name: "CreateInvoices" }
+];
+
+export async function startQueueProcess(): Promise<void> {
+  logger.info("[🏁] - Iniciando processamento de filas");
+
+  startWorker(
+    messageQueue,
+    { SendMessage: handleSendMessage },
+    {
+      limiter: {
+        max: Number(limiterMax),
+        duration: Number(limiterDuration)
+      }
+    }
+  );
+
+  startWorker(sendScheduledMessages, {
+    SendMessage: handleSendScheduledMessage
   });
 
-  scheduleMonitor.add(
-    "Verify",
-    {},
+  // Concorrência 1: os disparos seguem um por vez, como antes.
+  startWorker(
+    campaignQueue,
     {
-      repeat: { cron: "*/5 * * * * *", key: "verify" },
-      removeOnComplete: true
-    }
+      VerifyCampaigns: handleVerifyCampaigns,
+      ProcessCampaign: handleProcessCampaign,
+      PrepareContact: handlePrepareContact,
+      DispatchCampaign: handleDispatchCampaign
+    },
+    { concurrency: 1 }
   );
 
-  campaignQueue.add(
-    "VerifyCampaigns",
-    {},
-    {
-      repeat: { cron: "*/20 * * * * *", key: "verify-campaing" },
-      removeOnComplete: true
-    }
-  );
+  startWorker(maintenanceQueue, {
+    VerifySchedules: handleVerifySchedules,
+    VerifyCampaigns: async () => {
+      await campaignQueue.add("VerifyCampaigns", {}, { removeOnComplete: true });
+    },
+    VerifyLoginStatus: handleLoginStatus,
+    CloseTicketsAutomatic: closeTicketsAutomatic,
+    TransferTickets: TransferTicketQueue,
+    CreateInvoices: createInvoices
+  });
 
-  userMonitor.add(
-    "VerifyLoginStatus",
-    {},
-    {
-      repeat: { cron: "* * * * *", key: "verify-login" },
-      removeOnComplete: true
-    }
-  );
+  for (const scheduler of JOB_SCHEDULERS) {
+    await maintenanceQueue.upsertJobScheduler(
+      scheduler.id,
+      { pattern: scheduler.pattern },
+      { name: scheduler.name, data: {} }
+    );
+  }
+}
 
-  queueMonitor.add(
-    "VerifyQueueStatus",
-    {},
-    {
-      repeat: { cron: "*/20 * * * * *" },
-      removeOnComplete: true
-    }
+export async function closeQueues(): Promise<void> {
+  await Promise.all(workers.map(worker => worker.close()));
+  await Promise.all(
+    [messageQueue, sendScheduledMessages, campaignQueue, maintenanceQueue].map(
+      queue => queue.close()
+    )
   );
+  await connection.quit();
 }
