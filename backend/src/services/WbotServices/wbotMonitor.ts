@@ -7,7 +7,6 @@ import * as Sentry from "@sentry/node";
 
 import { Op } from "sequelize";
 // import { getIO } from "../../libs/socket";
-import { Store } from "../../libs/store";
 import Contact from "../../models/Contact";
 import Setting from "../../models/Setting";
 import Ticket from "../../models/Ticket";
@@ -19,7 +18,6 @@ import Company from "../../models/Company";
 
 type Session = WASocket & {
   id?: number;
-  store?: Store;
 };
 
 interface IContact {
