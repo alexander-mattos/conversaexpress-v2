@@ -44,7 +44,9 @@ export const buildTheme = (mode: ColorMode, language: AppLanguage = "pt"): Theme
         // No v4 o Paper escuro não tinha o gradiente de elevação do MUI atual.
         MuiPaper: { styleOverrides: { root: { backgroundImage: "none" } } },
         // No v4 os links só eram sublinhados ao passar o mouse.
-        MuiLink: { defaultProps: { underline: "hover" } }
+        MuiLink: { defaultProps: { underline: "hover" } },
+        // Largura do ícone nas listas do v4 (o MUI atual usa 36px).
+        MuiListItemIcon: { styleOverrides: { root: { minWidth: 56 } } }
       }
     },
     LOCALES[language]

@@ -31,6 +31,7 @@ import { socketManager } from "@/lib/socket";
 import { toastError } from "@/lib/toastError";
 import logo from "@/assets/logo.png";
 import MainMenu from "./MainMenu";
+import NotificationsPopOver from "./NotificationsPopOver";
 import NotificationsVolume from "./NotificationsVolume";
 
 const DRAWER_WIDTH = 240;
@@ -212,6 +213,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <IconButton onClick={() => window.location.reload()} aria-label={t("mainDrawer.appBar.refresh")} color="inherit">
             <CachedIcon sx={{ color: "white" }} />
           </IconButton>
+
+          <NotificationsPopOver volume={volume} />
 
           <IconButton
             aria-label="account of current user"

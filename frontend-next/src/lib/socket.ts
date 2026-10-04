@@ -20,9 +20,11 @@ const isExpired = (token: string): boolean => {
 export class ManagedSocket {
   private callbacks: { event: string; callback: Listener }[] = [];
   private joins: { event: string; params: unknown[] }[] = [];
+  private disposed = false;
+  private readonly onReconnect: () => void;
 
   constructor(private readonly manager: SocketManager, private readonly raw: Socket) {
-    raw.on("connect", () => {
+    this.onReconnect = () => {
       if (raw.recovered) return;
       const refreshJoinsOnReady = () => {
         for (const join of this.joins) raw.emit(`join${join.event}`, ...join.params);
@@ -33,12 +35,17 @@ export class ManagedSocket {
         raw.on(event, callback);
       }
       raw.on("ready", refreshJoinsOnReady);
-    });
+    };
+    raw.on("connect", this.onReconnect);
   }
 
   on(event: string, callback: Listener): void {
+    if (this.disposed) return;
     if (event === "ready" || event === "connect") {
-      this.manager.onReady(callback);
+      // Se o componente sair antes do "ready", o callback não roda mais.
+      this.manager.onReady((...args: unknown[]) => {
+        if (!this.disposed) callback(...args);
+      });
       return;
     }
     this.callbacks.push({ event, callback });
@@ -51,11 +58,15 @@ export class ManagedSocket {
   }
 
   emit(event: string, ...params: unknown[]): void {
+    if (this.disposed) return;
     if (event.startsWith("join")) this.joins.push({ event: event.substring(4), params });
     this.raw.emit(event, ...params);
   }
 
   disconnect(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.raw.off("connect", this.onReconnect);
     for (const join of this.joins) this.raw.emit(`leave${join.event}`, ...join.params);
     this.joins = [];
     for (const { event, callback } of this.callbacks) this.raw.off(event, callback);
