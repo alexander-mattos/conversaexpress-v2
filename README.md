@@ -109,14 +109,52 @@ npm start
 ## ✅ Verificações (CI)
 
 A cada push na `main` e em cada pull request, o GitHub Actions (`.github/workflows/ci.yml`) roda:
-- **backend**: `npm run typecheck` e `npm run build` (o `npm run lint` roda em modo informativo)
+- **backend**: `npm run typecheck`, `npm run test:unit` e `npm run build` (o `npm run lint` roda em modo informativo)
 - **frontend**: `npm run build`
+- **frontend-next**: `npm run typecheck`, `npm run lint`, `npm test` e `npm run build`
 
 Para rodar localmente:
 ```
-cd backend/ && npm run typecheck && npm run build
+cd backend/ && npm run typecheck && npm run test:unit && npm run build
 cd frontend/ && npm run build
+cd frontend-next/ && npm run typecheck && npm run lint && npm test && npm run build
 ```
+
+## 🧪 frontend-next (em migração)
+
+`frontend-next/` é o novo frontend em Next.js 16 + TypeScript + MUI 9, migrado tela a tela.
+O `frontend/` atual continua sendo o oficial até a migração terminar.
+Cores e marca são as mesmas (`src/theme/tokens.ts`; o teste `src/__tests__/theme.test.ts` falha se elas mudarem).
+
+Já migrado: login, cadastro, esqueci a senha, layout (menu e barra superior) e Dashboard.
+As demais telas aparecem no menu e abrem uma página "em migração" com link para a mesma tela no frontend atual.
+
+Diferenças em relação ao frontend atual:
+- o access token fica **só em memória**, nunca no `localStorage`;
+- ao recarregar a página, a sessão é renovada pelo cookie httpOnly de refresh;
+- o socket envia o token no `auth` do handshake, e não mais na URL.
+
+`.env` (copie de `.env.example`; as variáveis `NEXT_PUBLIC_*` entram no build):
+```
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
+NEXT_PUBLIC_HOURS_CLOSE_TICKETS_AUTO=24
+# endereço do frontend atual, usado nos links das telas ainda não migradas
+NEXT_PUBLIC_LEGACY_URL=http://localhost:3000
+```
+
+Desenvolvimento e produção (servidor standalone, Node 24):
+```
+cd frontend-next/
+npm install
+npm run dev
+
+npm run build
+cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/
+PORT=3000 node .next/standalone/server.js
+```
+
+Para usar os dois frontends ao mesmo tempo (homologação), mantenha o `FRONTEND_URL` do backend no frontend atual
+e adicione o endereço do frontend-next em `FRONTEND_EXTRA_ORIGINS` (lista separada por vírgula, para CORS e socket).
 
 ## 📦 Implantação em produção
 

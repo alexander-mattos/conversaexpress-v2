@@ -1,0 +1,59 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`tema ConversaExpress > tokens de superfície (claro e escuro) 1`] = `
+{
+  "announcements": "#ededed",
+  "announcementspopover": "#fff",
+  "barraSuperior": "linear-gradient(to right, #aa30e1, #aa30e1 , #aa30e1)",
+  "bordabox": "#eee",
+  "borderPrimary": "#aa30e1",
+  "boxchatlist": "#ededed",
+  "boxlist": "#ededed",
+  "boxticket": "#EEE",
+  "campaigntab": "#ededed",
+  "chatlist": "#eee",
+  "contactdrawer": "#fff",
+  "fancyBackground": "#fafafa",
+  "fontecor": "#128c7e",
+  "inputBackground": "#FFFFFF",
+  "inputdigita": "#fff",
+  "login": "#fff",
+  "mediainput": "#ededed",
+  "messageIcons": "grey",
+  "newmessagebox": "#eee",
+  "options": "#fafafa",
+  "optionsBackground": "#fafafa",
+  "tabHeaderBackground": "#EEE",
+  "textPrimary": "#aa30e1",
+  "total": "#fff",
+}
+`;
+
+exports[`tema ConversaExpress > tokens de superfície (claro e escuro) 2`] = `
+{
+  "announcements": "#333",
+  "announcementspopover": "#666",
+  "barraSuperior": "#666",
+  "bordabox": "#333",
+  "borderPrimary": "#FFFFFF",
+  "boxchatlist": "#333",
+  "boxlist": "#666",
+  "boxticket": "#666",
+  "campaigntab": "#666",
+  "chatlist": "#666",
+  "contactdrawer": "#666",
+  "fancyBackground": "#333",
+  "fontecor": "#fff",
+  "inputBackground": "#333",
+  "inputdigita": "#666",
+  "login": "#1C1C1C",
+  "mediainput": "#1c1c1c",
+  "messageIcons": "#F3F3F3",
+  "newmessagebox": "#333",
+  "options": "#666",
+  "optionsBackground": "#333",
+  "tabHeaderBackground": "#666",
+  "textPrimary": "#FFFFFF",
+  "total": "#222",
+}
+`;

@@ -22,3 +22,6 @@ instalador/config
 *.log
 npm-debug.log*
 .DS_Store
+
+# TypeScript
+*.tsbuildinfo
