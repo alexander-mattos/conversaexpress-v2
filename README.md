@@ -149,6 +149,8 @@ npm ci
 rm -rf dist
 npm run build
 npx sequelize db:migrate
+# Move jobs pendentes do Bull antigo para o BullMQ (idempotente)
+npm run queues:migrate
 pm2 start ${empresa_atualizar}-backend
 pm2 save 
 ```

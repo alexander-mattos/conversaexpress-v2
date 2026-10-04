@@ -4,9 +4,7 @@ import { initIO } from "./libs/socket";
 import { logger } from "./utils/logger";
 import { StartAllWhatsAppsSessions } from "./services/WbotServices/StartAllWhatsAppsSessions";
 import Company from "./models/Company";
-import { startQueueProcess } from "./queues";
-import { TransferTicketQueue } from "./wbotTransferTicketQueue";
-import cron from "node-cron";
+import { closeQueues, startQueueProcess } from "./queues";
 
 const server = app.listen(process.env.PORT, async () => {
   const companies = await Company.findAll();
@@ -17,24 +15,16 @@ const server = app.listen(process.env.PORT, async () => {
   });
 
   Promise.all(allPromises).then(() => {
-    startQueueProcess();
+    startQueueProcess().catch(err => logger.error(err, "Falha ao iniciar filas"));
   });
   logger.info(`Server started on port: ${process.env.PORT}`);
 });
 
-cron.schedule("* * * * *", async () => {
-
-  try {
-    // console.log("Running a job at 01:00 at America/Sao_Paulo timezone")
-    logger.info(`Serviço de transferencia de tickets iniciado`);
-
-    await TransferTicketQueue();
-  }
-  catch (error) {
-    logger.error(error);
-  }
-
-});
+// A transferência de tickets agora é um agendador do BullMQ (queues.ts).
 
 initIO(server);
-gracefulShutdown(server);
+gracefulShutdown(server, {
+  onShutdown: async () => {
+    await closeQueues();
+  }
+});
