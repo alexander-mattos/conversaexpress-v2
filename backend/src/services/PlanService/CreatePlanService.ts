@@ -46,7 +46,7 @@ const CreatePlanService = async (planData: PlanData): Promise<Plan> => {
     throw new AppError(err.message);
   }
 
-  const plan = await Plan.create(planData);
+  const plan = await Plan.create({ ...planData });
 
   return plan;
 };

@@ -23,7 +23,7 @@ import Prompt from "./Prompt";
 import QueueIntegrations from "./QueueIntegrations";
 
 @Table
-class Whatsapp extends Model<Whatsapp> {
+class Whatsapp extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

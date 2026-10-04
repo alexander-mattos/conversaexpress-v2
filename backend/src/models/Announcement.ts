@@ -13,7 +13,7 @@ import {
 import Company from "./Company";
 
 @Table
-class Announcement extends Model<Announcement> {
+class Announcement extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

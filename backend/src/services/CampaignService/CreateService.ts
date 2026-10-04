@@ -38,7 +38,7 @@ const CreateService = async (data: Data): Promise<Campaign> => {
     data.status = "PROGRAMADA";
   }
 
-  const record = await Campaign.create(data);
+  const record = await Campaign.create({ ...data });
 
   await record.reload({
     include: [

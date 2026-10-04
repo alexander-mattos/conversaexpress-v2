@@ -14,7 +14,7 @@ import Queue from "./Queue";
 import Company from "./Company";
 
 @Table
-class Prompt extends Model<Prompt> {
+class Prompt extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

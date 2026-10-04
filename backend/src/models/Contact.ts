@@ -20,7 +20,7 @@ import Schedule from "./Schedule";
 import Whatsapp from "./Whatsapp";
 
 @Table
-class Contact extends Model<Contact> {
+class Contact extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

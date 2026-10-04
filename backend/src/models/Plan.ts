@@ -11,7 +11,7 @@ import {
 } from "sequelize-typescript";
 
 @Table
-class Plan extends Model<Plan> {
+class Plan extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

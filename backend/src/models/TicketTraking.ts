@@ -18,7 +18,7 @@ import Whatsapp from "./Whatsapp";
 @Table({
   tableName: "TicketTraking"
 })
-class TicketTraking extends Model<TicketTraking> {
+class TicketTraking extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

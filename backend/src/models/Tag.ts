@@ -16,7 +16,7 @@ import Ticket from "./Ticket";
 import TicketTag from "./TicketTag";
 
 @Table
-class Tag extends Model<Tag> {
+class Tag extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

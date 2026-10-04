@@ -33,7 +33,7 @@ const CreateService = async (data: Data): Promise<ContactListItem> => {
       companyId: data.companyId,
       contactListId: data.contactListId
     },
-    defaults: data
+    defaults: { ...data }
   });
 
   try {

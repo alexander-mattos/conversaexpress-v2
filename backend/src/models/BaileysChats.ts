@@ -15,7 +15,7 @@ import Company from "./Company";
 import Whatsapp from "./Whatsapp";
 
 @Table
-class BaileysChats extends Model<BaileysChats> {
+class BaileysChats extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

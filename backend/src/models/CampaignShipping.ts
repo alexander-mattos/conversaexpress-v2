@@ -13,7 +13,7 @@ import Campaign from "./Campaign";
 import ContactListItem from "./ContactListItem";
 
 @Table({ tableName: "CampaignShipping" })
-class CampaignShipping extends Model<CampaignShipping> {
+class CampaignShipping extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

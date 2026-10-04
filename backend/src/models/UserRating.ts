@@ -17,7 +17,7 @@ import {
   @Table({
     tableName: "UserRatings"
   })
-  class UserRating extends Model<UserRating> {
+  class UserRating extends Model {
     @PrimaryKey
     @AutoIncrement
     @Column

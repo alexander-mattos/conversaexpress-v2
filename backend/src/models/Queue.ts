@@ -26,7 +26,7 @@ import Prompt from "./Prompt";
 import QueueIntegrations from "./QueueIntegrations";
 
 @Table
-class Queue extends Model<Queue> {
+class Queue extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

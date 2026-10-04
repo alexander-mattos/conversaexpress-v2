@@ -16,7 +16,7 @@ import Company from "./Company";
 import Queue from "./Queue";
 
 @Table
-class Message extends Model<Message> {
+class Message extends Model {
   @PrimaryKey
   @Column
   id: string;

@@ -24,7 +24,7 @@ import QuickMessage from "./QuickMessage";
 import Whatsapp from "./Whatsapp";
 
 @Table
-class User extends Model<User> {
+class User extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

@@ -113,9 +113,11 @@ export default async function DashboardDataService(
   let where = 'where tt."companyId" = ?';
   const replacements: any[] = [companyId];
 
-  if (_.has(params, "days")) {
-    where += ` and tt."queuedAt" >= (now() - '? days'::interval)`;
-    replacements.push(parseInt(`${params.days}`.replace(/\D/g, ""), 10));
+  const days = parseInt(`${params.days}`.replace(/\D/g, ""), 10);
+  if (_.has(params, "days") && !Number.isNaN(days)) {
+    // O Sequelize 6 não substitui "?" dentro de aspas ('? days'::interval).
+    where += ` and tt."queuedAt" >= (now() - (? * interval '1 day'))`;
+    replacements.push(days);
   }
 
   if (_.has(params, "date_from")) {

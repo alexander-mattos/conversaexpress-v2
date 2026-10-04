@@ -10,7 +10,7 @@ import {
 } from "sequelize-typescript";
 
 @Table
-class Subscriptions extends Model<Subscriptions> {
+class Subscriptions extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

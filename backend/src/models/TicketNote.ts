@@ -15,7 +15,7 @@ import User from "./User";
 import Ticket from "./Ticket";
 
 @Table
-class TicketNote extends Model<TicketNote> {
+class TicketNote extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

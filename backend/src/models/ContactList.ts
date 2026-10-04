@@ -14,7 +14,7 @@ import Company from "./Company";
 import ContactListItem from "./ContactListItem";
 
 @Table({ tableName: "ContactLists" })
-class ContactList extends Model<ContactList> {
+class ContactList extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column
