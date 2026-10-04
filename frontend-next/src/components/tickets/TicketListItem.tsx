@@ -19,6 +19,9 @@ import {
 } from "@mui/material";
 import { green, grey } from "@mui/material/colors";
 import AndroidIcon from "@mui/icons-material/Android";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import { blue } from "@mui/material/colors";
+import TicketMessagesDialog from "@/components/ticket/TicketMessagesDialog";
 import MarkdownWrapper from "@/components/MarkdownWrapper";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
@@ -62,6 +65,7 @@ export default function TicketListItem({ ticket, onSelect }: { ticket: Ticket; o
   const { user } = useAuth();
   const openUuid = useOpenTicketUuid();
   const [loading, setLoading] = useState(false);
+  const [peekOpen, setPeekOpen] = useState(false);
 
   if (!user) return null;
 
@@ -154,6 +158,7 @@ export default function TicketListItem({ ticket, onSelect }: { ticket: Ticket; o
 
   return (
     <>
+      {peekOpen && <TicketMessagesDialog open={peekOpen} onClose={() => setPeekOpen(false)} ticketId={ticket.id} />}
       <ListItemButton
         dense
         onClick={handleSelect}
@@ -182,6 +187,19 @@ export default function TicketListItem({ ticket, onSelect }: { ticket: Ticket; o
             <Box component="span" sx={{ display: "flex", justifyContent: "space-between", ml: "5px" }}>
               <Typography noWrap component="span" variant="body2" color="textPrimary">
                 {ticket.contact?.name}
+                {user.profile === "admin" && (
+                  <Tooltip title={t("ticketsListItem.tooltip.peek")}>
+                    <VisibilityIcon
+                      aria-label={t("ticketsListItem.tooltip.peek")}
+                      onClick={event => {
+                        event.stopPropagation();
+                        setPeekOpen(true);
+                      }}
+                      fontSize="small"
+                      sx={{ color: blue[700], cursor: "pointer", ml: "10px", verticalAlign: "middle" }}
+                    />
+                  </Tooltip>
+                )}
               </Typography>
               {ticket.chatbot && (
                 <Box sx={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)" }}>

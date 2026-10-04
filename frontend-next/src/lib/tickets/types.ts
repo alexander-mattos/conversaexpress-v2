@@ -19,6 +19,7 @@ export interface ContactRef {
   profilePicUrl?: string;
   urlPicture?: string;
   isGroup?: boolean;
+  extraInfo?: { id?: number; name: string; value: string }[];
 }
 
 export interface Ticket {
@@ -39,6 +40,9 @@ export interface Ticket {
   whatsappId?: number | null;
   whatsapp?: { id: number; name: string } | null;
   tags?: Tag[];
+  useIntegration?: boolean;
+  promptId?: string | number | null;
+  integrationId?: number | null;
 }
 
 export interface TicketMessage {

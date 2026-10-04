@@ -128,9 +128,9 @@ Cores e marca são as mesmas (`src/theme/tokens.ts`; o teste `src/__tests__/them
 
 Já migrado:
 - login, cadastro, esqueci a senha, layout (menu e barra superior) e Dashboard;
-- atendimentos: lista de tickets (abas, filtros, busca, novo ticket) e notificações com som.
-
-A conversa do ticket (3b-2) ainda abre no frontend atual.
+- atendimentos: lista de tickets (abas, filtros, busca, novo ticket), notificações com som,
+  conversa (mensagens, envio de texto/arquivos/áudio/emoji, respostas rápidas, transferir, agendar, tags)
+  e painel do contato (dados, edição e observações).
 As demais telas aparecem no menu e abrem uma página "em migração" com link para a mesma tela no frontend atual.
 
 Diferenças em relação ao frontend atual:
