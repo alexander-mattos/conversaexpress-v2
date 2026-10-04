@@ -33,15 +33,24 @@ const ResetPassword = async (
 
   const passwordHash = await hash(password, 10);
 
-  // Incrementar tokenVersion invalida os refresh tokens já emitidos.
-  await database.query(
+  // O valor validado entra no WHERE: se outro pedido gravou um código novo
+  // entre a validação e este UPDATE, nenhuma linha muda e o código antigo
+  // não é aceito. Incrementar tokenVersion invalida os refresh tokens.
+  const affectedRows = await database.query(
     `UPDATE "Users"
         SET "passwordHash" = :passwordHash,
             "resetPassword" = NULL,
             "tokenVersion" = COALESCE("tokenVersion", 0) + 1
-      WHERE id = :id`,
-    { type: QueryTypes.UPDATE, replacements: { passwordHash, id: user.id } }
+      WHERE id = :id AND "resetPassword" = :storedToken`,
+    {
+      type: QueryTypes.BULKUPDATE,
+      replacements: { passwordHash, id: user.id, storedToken: user.resetPassword }
+    }
   );
+
+  if (Number(affectedRows) !== 1) {
+    throw new AppError("ERR_INVALID_RESET_TOKEN", 400);
+  }
 };
 
 export default ResetPassword;
