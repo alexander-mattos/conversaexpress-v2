@@ -18,7 +18,7 @@ import Files from "./Files";
 import Tag from "./Tag";
 
 @Table({ tableName: "Campaigns" })
-class Campaign extends Model<Campaign> {
+class Campaign extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

@@ -13,7 +13,7 @@ import Ticket from "./Ticket";
 @Table({
   tableName: 'TicketTags'
 })
-class TicketTag extends Model<TicketTag> {
+class TicketTag extends Model {
   @ForeignKey(() => Ticket)
   @Column
   ticketId: number;

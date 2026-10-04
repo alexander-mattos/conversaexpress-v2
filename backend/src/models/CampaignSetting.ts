@@ -12,7 +12,7 @@ import {
 import Company from "./Company";
 
 @Table({ tableName: "CampaignSettings" })
-class CampaignSetting extends Model<CampaignSetting> {
+class CampaignSetting extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

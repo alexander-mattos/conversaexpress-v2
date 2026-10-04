@@ -14,7 +14,7 @@ import Company from "./Company";
 import User from "./User";
 
 @Table
-class QuickMessage extends Model<QuickMessage> {
+class QuickMessage extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

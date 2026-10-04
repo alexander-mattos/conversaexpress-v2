@@ -21,7 +21,7 @@ import Company from "./Company";
 import User from "./User";
 
 @Table({ tableName: "Chats" })
-class Chat extends Model<Chat> {
+class Chat extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

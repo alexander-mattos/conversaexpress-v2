@@ -25,7 +25,7 @@ const CreateService = async (data: Data): Promise<Help> => {
     throw new AppError(err.message);
   }
 
-  const record = await Help.create(data);
+  const record = await Help.create({ ...data });
 
   return record;
 };

@@ -16,7 +16,7 @@ import Ticket from "./Ticket";
 import User from "./User";
 
 @Table
-class Schedule extends Model<Schedule> {
+class Schedule extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

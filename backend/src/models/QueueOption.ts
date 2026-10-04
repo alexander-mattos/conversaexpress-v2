@@ -13,7 +13,7 @@ import {
 import Queue from "./Queue";
 
 @Table
-class QueueOption extends Model<QueueOption> {
+class QueueOption extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

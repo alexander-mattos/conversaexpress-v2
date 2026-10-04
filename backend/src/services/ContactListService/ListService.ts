@@ -42,7 +42,7 @@ const ListService = async ({
   const limit = 20;
   const offset = limit * (+pageNumber - 1);
 
-  const { count, rows: records } = await ContactList.findAndCountAll({
+  const { count: groupedCount, rows: records } = await ContactList.findAndCountAll({
     where: whereCondition,
     limit,
     offset,
@@ -64,6 +64,10 @@ const ListService = async ({
     group: ["ContactList.id"]
   });
 
+  // Com "group", o Sequelize devolve uma contagem por grupo (array): o total
+  // é o número de grupos. Antes, hasMore saía sempre false e a lista parava
+  // nos primeiros registros.
+  const count = Array.isArray(groupedCount) ? groupedCount.length : groupedCount;
   const hasMore = count > offset + records.length;
 
   return {

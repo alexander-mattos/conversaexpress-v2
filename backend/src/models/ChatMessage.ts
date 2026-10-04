@@ -13,7 +13,7 @@ import User from "./User";
 import Chat from "./Chat";
 
 @Table({ tableName: "ChatMessages" })
-class ChatMessage extends Model<ChatMessage> {
+class ChatMessage extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

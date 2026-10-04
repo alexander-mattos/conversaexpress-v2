@@ -24,7 +24,7 @@ import UserRating from "./UserRating";
 import Whatsapp from "./Whatsapp";
 
 @Table
-class Company extends Model<Company> {
+class Company extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

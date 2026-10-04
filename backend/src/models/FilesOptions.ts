@@ -14,7 +14,7 @@ import Files from "./Files";
 @Table({
   tableName: "FilesOptions"
 })
-class FilesOptions extends Model<FilesOptions> {
+class FilesOptions extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

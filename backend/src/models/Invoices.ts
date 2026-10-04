@@ -12,7 +12,7 @@ import {
 } from "sequelize-typescript";
 
 @Table({ tableName: "Invoices" })
-class Invoices extends Model<Invoices> {
+class Invoices extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

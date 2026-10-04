@@ -29,7 +29,7 @@ import QueueIntegrations from "./QueueIntegrations";
 import Prompt from "./Prompt";
 
 @Table
-class Ticket extends Model<Ticket> {
+class Ticket extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

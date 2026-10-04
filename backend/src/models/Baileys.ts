@@ -12,7 +12,7 @@ import {
 import Whatsapp from "./Whatsapp";
 
 @Table
-class Baileys extends Model<Baileys> {
+class Baileys extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

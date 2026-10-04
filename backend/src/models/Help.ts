@@ -11,7 +11,7 @@ import {
 @Table({
   tableName: "Helps"
 })
-class Help extends Model<Help> {
+class Help extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column

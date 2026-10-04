@@ -16,7 +16,7 @@ import Queue from "./Queue";
 import Company from "./Company";
 
 @Table
-class QueueIntegrations extends Model<QueueIntegrations> {
+class QueueIntegrations extends Model {
     @PrimaryKey
     @AutoIncrement
     @Column
