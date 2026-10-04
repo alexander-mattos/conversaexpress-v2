@@ -41,7 +41,7 @@ system_update
 system_node_install
 system_pm2_install
 system_docker_install
-system_puppeteer_dependencies
+#system_puppeteer_dependencies (Puppeteer removido do backend)
 system_snapd_install
 system_nginx_install
 system_certbot_install
