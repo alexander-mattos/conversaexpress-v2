@@ -3,6 +3,7 @@ import "reflect-metadata";
 import "express-async-errors";
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
+import { getAllowedOrigins } from "./helpers/AllowedOrigins";
 import helmet from "helmet";
 import multer from "multer";
 import cookieParser from "cookie-parser";
@@ -42,7 +43,7 @@ app.use(bodyParser.json({ limit: '10mb' }));
 app.use(
   cors({
     credentials: true,
-    origin: process.env.FRONTEND_URL
+    origin: getAllowedOrigins()
   })
 );
 app.use(cookieParser());

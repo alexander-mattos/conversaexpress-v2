@@ -6,6 +6,7 @@ import User from "../models/User";
 import Queue from "../models/Queue";
 import Ticket from "../models/Ticket";
 import { verify } from "jsonwebtoken";
+import { getHandshakeToken } from "../helpers/SocketHandshakeToken";
 import authConfig from "../config/auth";
 
 // Sala de eventos de uma fila. Tickets sem fila usam uma sala por empresa;
@@ -17,22 +18,23 @@ export const queueRoom = (
 ): string =>
   queueId ? `queue-${queueId}-${suffix}` : `company-${companyId}-queue-null-${suffix}`;
 import { CounterManager } from "./counter";
+import { getAllowedOrigins } from "../helpers/AllowedOrigins";
 
 let io: SocketIO;
 
 export const initIO = (httpServer: Server): SocketIO => {
   io = new SocketIO(httpServer, {
     cors: {
-      origin: process.env.FRONTEND_URL
+      origin: getAllowedOrigins()
     }
   });
 
   io.on("connection", async socket => {
     logger.info("Client Connected");
-    const { token } = socket.handshake.query;
+    const token = getHandshakeToken(socket.handshake);
     let tokenData = null;
     try {
-      tokenData = verify(token as string, authConfig.secret);
+      tokenData = verify(token, authConfig.secret);
       logger.debug(tokenData, "io-onConnection: tokenData");
     } catch (error) {
       logger.warn(`[libs/socket.ts] Error decoding token: ${error?.message}`);
