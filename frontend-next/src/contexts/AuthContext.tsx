@@ -28,6 +28,7 @@ export interface User {
   companyId: number;
   super: boolean;
   allTicket?: string;
+  whatsappId?: number | null;
   queues: Queue[];
   company?: { id: number; name: string; dueDate?: string; settings?: Setting[] } | null;
 }

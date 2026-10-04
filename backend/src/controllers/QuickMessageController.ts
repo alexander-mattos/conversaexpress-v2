@@ -31,7 +31,6 @@ type StoreData = {
 };
 
 type FindParams = {
-  companyId: string;
   userId: string;
 };
 
@@ -147,8 +146,13 @@ export const findList = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const params = req.query as FindParams;
-  const records: QuickMessage[] = await FindService(params);
+  const { userId } = req.query as FindParams;
+  // A empresa vem sempre do token: o companyId da URL permitia ler as
+  // respostas rápidas de outra empresa.
+  const records: QuickMessage[] = await FindService({
+    companyId: String(req.user.companyId),
+    userId
+  });
 
   return res.status(200).json(records);
 };

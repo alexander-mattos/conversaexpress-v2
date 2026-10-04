@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { assertCompanyAccess } from "../helpers/CompanyAccess";
 import { getIO, queueRoom } from "../libs/socket";
+import AppError from "../errors/AppError";
 import Ticket from "../models/Ticket";
 
 import CreateTicketService from "../services/TicketServices/CreateTicketService";
@@ -205,7 +206,12 @@ export const remove = async (
   res: Response
 ): Promise<Response> => {
   const { ticketId } = req.params;
-  const { companyId } = req.user;
+  const { companyId, profile } = req.user;
+
+  // Mesma regra da tela (ticket-options:deleteTicket): só admin exclui.
+  if (profile !== "admin") {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
 
   await ShowTicketService(ticketId, companyId);
 
