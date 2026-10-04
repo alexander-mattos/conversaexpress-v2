@@ -9,7 +9,7 @@ const requireSecret = (name: string): string => {
 
 export default {
   secret: requireSecret("JWT_SECRET"),
-  expiresIn: "15m",
+  expiresIn: "15m" as const,
   refreshSecret: requireSecret("JWT_REFRESH_SECRET"),
-  refreshExpiresIn: "7d"
+  refreshExpiresIn: "7d" as const
 };

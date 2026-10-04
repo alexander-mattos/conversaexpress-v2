@@ -14,7 +14,7 @@ Consulte **[Implantação](#-implanta%C3%A7%C3%A3o-em-produ%C3%A7%C3%A3o)** para
 ### 📋 Pré-requisitos
 
 ```
-- Node.js v20.x
+- Node.js v24.x (LTS)
 - Postgres (release)
 - Npm ( latest )
 - Docker (bionic stable)

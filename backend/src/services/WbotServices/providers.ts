@@ -5,7 +5,6 @@ import Ticket from "../../models/Ticket";
 import { getBodyMessage, isNumeric, sleep, validaCpfCnpj, sendMessageImage, sendMessageLink, makeid } from "./wbotMessageListener";
 import formatBody from "../../helpers/Mustache";
 
-import puppeteer from "puppeteer";
 
 import axios from 'axios';
 import UpdateTicketService from "../TicketServices/UpdateTicketService";
@@ -185,24 +184,6 @@ export const provider = async (ticket: Ticket, msg: proto.IWebMessageInfo, compa
                         await wbot.sendMessage(`${ticket.contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`, bodyPdfQr);
                         await sleep(2000)
 
-                        //GERA O PDF
-                        const nomePDF = `Boleto-${nome}-${dia}-${mes}-${ano}.pdf`;
-                        (async () => {
-                          const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
-                          const page = await browser.newPage();
-                          const website_url = `${urlmkauth}/boleto/21boleto.php?titulo=${titulo}`;
-                          await page.goto(website_url, { waitUntil: 'networkidle0' });
-                          await page.emulateMediaType('screen');
-                          // Downlaod the PDF
-                          const pdf = await page.pdf({
-                            path: nomePDF,
-                            printBackground: true,
-                            format: 'A4',
-                          });
-
-                          await browser.close();
-                          await sendMessageLink(wbot, contact, ticket, nomePDF, nomePDF);
-                        });
 
 
                         if (bloqueado === 'sim') {
@@ -237,11 +218,6 @@ export const provider = async (ticket: Ticket, msg: proto.IWebMessageInfo, compa
                         await sleep(12000)
                         await wbot.sendMessage(`${ticket.contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`, bodyfinaliza);
 
-                        await sleep(2000)
-                        fs.unlink(nomePDF, function (err) {
-                          if (err) throw err;
-                          console.log(err);
-                        })
 
                         await UpdateTicketService({
                           ticketData: { status: "closed" },

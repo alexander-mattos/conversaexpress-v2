@@ -1,4 +1,5 @@
 import path, { join } from "path";
+import axios from "axios";
 import { promisify } from "util";
 import { readFile, writeFile } from "fs";
 import * as Sentry from "@sentry/node";
@@ -47,7 +48,8 @@ import Setting from "../../models/Setting";
 import { cacheLayer } from "../../libs/cache";
 import { provider } from "./providers";
 import { debounce } from "../../helpers/Debounce";
-import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
+import OpenAI from "openai";
+import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import ffmpeg from "fluent-ffmpeg";
 import {
   SpeechConfig,
@@ -58,7 +60,6 @@ import typebotListener from "../TypebotServices/typebotListener";
 import QueueIntegrations from "../../models/QueueIntegrations";
 import ShowQueueIntegrationService from "../QueueIntegrationServices/ShowQueueIntegrationService";
 
-const request = require("request");
 
 const fs = require("fs");
 
@@ -67,10 +68,17 @@ type Session = WASocket & {
   store?: Store;
 };
 
-interface SessionOpenAi extends OpenAIApi {
-  id?: number;
-}
-const sessionsOpenAi: SessionOpenAi[] = [];
+// Um cliente por chave de API: trocar a chave no prompt passa a valer sem
+// reiniciar o servidor (antes o cache era por conexão).
+const openAiClients = new Map<string, OpenAI>();
+const getOpenAiClient = (apiKey: string): OpenAI => {
+  let client = openAiClients.get(apiKey);
+  if (!client) {
+    client = new OpenAI({ apiKey });
+    openAiClients.set(apiKey, client);
+  }
+  return client;
+};
 
 interface ImessageUpsert {
   messages: proto.IWebMessageInfo[];
@@ -661,19 +669,7 @@ const handleOpenAi = async (
     "public"
   );
 
-  let openai: SessionOpenAi;
-  const openAiIndex = sessionsOpenAi.findIndex(s => s.id === wbot.id);
-
-  if (openAiIndex === -1) {
-    const configuration = new Configuration({
-      apiKey: prompt.apiKey
-    });
-    openai = new OpenAIApi(configuration);
-    openai.id = wbot.id;
-    sessionsOpenAi.push(openai);
-  } else {
-    openai = sessionsOpenAi[openAiIndex];
-  }
+  const openai = getOpenAiClient(prompt.apiKey);
 
   let maxMessages = prompt.maxMessages;
 
@@ -690,7 +686,7 @@ const handleOpenAi = async (
   } tokens e cuide para não truncar o final.\nSempre que possível, mencione o nome dele para ser mais personalizado o atendimento e mais educado. Quando a resposta requer uma transferência para o setor de atendimento, comece sua resposta com 'Ação: Transferir para o setor de atendimento'.\n
   ${prompt.prompt}\n`;
 
-  let messagesOpenAi: ChatCompletionRequestMessage[] = [];
+  let messagesOpenAi: ChatCompletionMessageParam[] = [];
 
   if (msg.message?.conversation || msg.message?.extendedTextMessage?.text) {
     messagesOpenAi = [];
@@ -710,14 +706,14 @@ const handleOpenAi = async (
     }
     messagesOpenAi.push({ role: "user", content: bodyMessage! });
 
-    const chat = await openai.createChatCompletion({
+    const chat = await openai.chat.completions.create({
       model: prompt.model,
       messages: messagesOpenAi,
-      max_tokens: prompt.maxTokens,
+      max_completion_tokens: prompt.maxTokens,
       temperature: prompt.temperature
     });
 
-    let response = chat.data.choices[0].message?.content;
+    let response = chat.choices[0].message?.content;
 
     if (response?.includes("Ação: Transferir para o setor de atendimento")) {
       await transferQueue(prompt.queueId, ticket, contact);
@@ -763,8 +759,10 @@ const handleOpenAi = async (
     }*/
   } else if (msg.message?.audioMessage) {
     const mediaUrl = mediaSent!.mediaUrl!.split("/").pop();
-    const file = fs.createReadStream(`${publicFolder}/${mediaUrl}`) as any;
-    const transcription = await openai.createTranscription(file, "whisper-1");
+    const transcription = await openai.audio.transcriptions.create({
+      file: fs.createReadStream(`${publicFolder}/${mediaUrl}`),
+      model: "whisper-1"
+    });
 
     messagesOpenAi = [];
     messagesOpenAi.push({ role: "system", content: promptSystem });
@@ -781,14 +779,14 @@ const handleOpenAi = async (
         }
       }
     }
-    messagesOpenAi.push({ role: "user", content: transcription.data.text });
-    const chat = await openai.createChatCompletion({
+    messagesOpenAi.push({ role: "user", content: transcription.text });
+    const chat = await openai.chat.completions.create({
       model: prompt.model,
       messages: messagesOpenAi,
-      max_tokens: prompt.maxTokens,
+      max_completion_tokens: prompt.maxTokens,
       temperature: prompt.temperature
     });
-    let response = chat.data.choices[0].message?.content;
+    let response = chat.choices[0].message?.content;
 
     if (response?.includes("Ação: Transferir para o setor de atendimento")) {
       await transferQueue(prompt.queueId, ticket, contact);
@@ -1708,25 +1706,16 @@ export const handleMessageIntegration = async (
 
   if (queueIntegration.type === "n8n" || queueIntegration.type === "webhook") {
     if (queueIntegration?.urlN8N) {
-      const options = {
-        method: "POST",
-        url: queueIntegration?.urlN8N,
-        headers: {
-          "Content-Type": "application/json"
-        },
-        json: msg
-      };
-      try {
-        request(options, function (error, response) {
-          if (error) {
-            throw new Error(error);
-          } else {
-            console.log(response.body);
-          }
+      // Envio em segundo plano, como antes; falhas só são registradas
+      // (o throw dentro do callback do request derrubava o processo).
+      axios
+        .post(queueIntegration.urlN8N, msg, {
+          headers: { "Content-Type": "application/json" },
+          timeout: 15000
+        })
+        .catch(error => {
+          logger.error(`Erro no webhook da integração ${queueIntegration.id}: ${error.message}`);
         });
-      } catch (error) {
-        throw new Error(error);
-      }
     }
   } else if (queueIntegration.type === "typebot") {
     console.log("entrou no typebot");
