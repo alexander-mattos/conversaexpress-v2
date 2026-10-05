@@ -4,12 +4,13 @@ import AppError from "../../errors/AppError";
 import Files from "../../models/Files";
 import FilesOptions from "../../models/FilesOptions";
 import ShowService from "./ShowService";
+import { FileOptionInput } from "./FileOptionsInput";
 
 interface Request {
   name: string;
   companyId: number;
   message: string;
-  options?: FilesOptions[];
+  options?: FileOptionInput[];
 }
 
 const CreateService = async ({
@@ -50,14 +51,11 @@ const CreateService = async ({
     companyId 
   });
 
-  if(options && options.length > 0) {
-    await Promise.all(
-      options.map(async info => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        await FilesOptions.upsert({ ...info, fileId: fileList.id });
-      })
-    );
+  // Lista nova: as opções são sempre criadas (ids enviados são ignorados;
+  // antes um id de outra lista "puxava" a opção para esta).
+  for (const info of options ?? []) {
+    // path e mediaType são NOT NULL: ficam vazios até o upload.
+    await FilesOptions.create({ name: info.name, fileId: fileList.id, path: "", mediaType: "" });
   }
 
    fileList = await ShowService(fileList.id, companyId)

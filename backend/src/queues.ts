@@ -684,7 +684,10 @@ async function handleDispatchCampaign(job) {
         const files = await ShowFileService(campaign.fileListId, campaign.companyId)
         const folder = path.resolve(publicFolder, "fileList", String(files.id))
         for (const [index, file] of files.options.entries()) {
-          const options = await getMessageOptions(file.path, path.resolve(folder, file.path), file.name);
+          // Opção ainda sem arquivo (o upload não chegou): só o texto não é enviado.
+          if (!file.path) continue;
+          // basename: o arquivo nunca sai da pasta da lista, mesmo com path antigo forjado.
+          const options = await getMessageOptions(file.path, path.resolve(folder, path.basename(String(file.path || ""))), file.name);
           await wbot.sendMessage(chatId, { ...options });
 
           logger.info("[🚩] - Enviou arquivo: "+ file.name +" | CampaignShippingId: " + campaignShippingId + " CampanhaID: " + campaignId);

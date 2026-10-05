@@ -60,7 +60,7 @@ const UpdateWhatsAppService = async ({
     complationMessage,
     outOfHoursMessage,
     ratingMessage,
-    queueIds = [],
+    queueIds,
     token,
     //timeSendQueue,
     //sendIdQueue = null,
@@ -79,7 +79,7 @@ const UpdateWhatsAppService = async ({
     throw new AppError(err.message);
   }
 
-  if (queueIds.length > 1 && !greetingMessage) {
+  if (Array.isArray(queueIds) && queueIds.length > 1 && !greetingMessage) {
     throw new AppError("ERR_WAPP_GREETING_REQUIRED");
   }
 
@@ -122,7 +122,8 @@ const UpdateWhatsAppService = async ({
     expiresInactiveMessage
   });
 
-  await AssociateWhatsappQueue(whatsapp, queueIds);
+  // Sem queueIds no corpo, as filas ficam como estão.
+  if (Array.isArray(queueIds)) await AssociateWhatsappQueue(whatsapp, queueIds);
 
   return { whatsapp, oldDefaultWhatsapp };
 };

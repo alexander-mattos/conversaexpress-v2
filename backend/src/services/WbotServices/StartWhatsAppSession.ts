@@ -14,7 +14,8 @@ export const StartWhatsAppSession = async (
   await whatsapp.update({ status: "OPENING" });
 
   const io = getIO();
-  io.to(`company-${whatsapp.companyId}-mainchannel`).emit("whatsappSession", {
+  // Mesmo nome de evento dos demais (antes a tela não recebia "OPENING").
+  io.to(`company-${whatsapp.companyId}-mainchannel`).emit(`company-${whatsapp.companyId}-whatsappSession`, {
     action: "update",
     session: withoutSession(whatsapp)
   });

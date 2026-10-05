@@ -4,15 +4,22 @@ import {
   BelongsTo,
   Column,
   CreatedAt,
+  DefaultScope,
   ForeignKey,
   Model,
   PrimaryKey,
+  Scopes,
   Table,
   UpdatedAt
 } from "sequelize-typescript";
 import Queue from "./Queue";
 import Company from "./Company";
 
+// A chave da OpenAI nunca sai do banco por padrão (respostas, sockets e
+// includes em tickets e conexões). Só o atendimento automático a lê, com
+// Prompt.scope("withKey").
+@DefaultScope(() => ({ attributes: { exclude: ["apiKey"] } }))
+@Scopes(() => ({ withKey: { attributes: { include: ["apiKey"] } } }))
 @Table
 class Prompt extends Model {
   @PrimaryKey

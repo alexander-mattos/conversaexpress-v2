@@ -67,7 +67,6 @@ const UpdateQueueIntegrationService = async ({
     jsonContent,
     language,
     urlN8N,
-    companyId,
     typebotExpires,
     typebotKeywordFinish,
     typebotSlug,

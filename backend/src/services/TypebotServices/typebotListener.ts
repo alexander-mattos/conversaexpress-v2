@@ -1,3 +1,4 @@
+import { assertSafeExternalUrl } from "../../helpers/SafeExternalUrl";
 import axios, { AxiosRequestConfig } from "axios";
 import Ticket from "../../models/Ticket";
 import QueueIntegrations from "../../models/QueueIntegrations";
@@ -38,6 +39,14 @@ const typebotListener = async ({
         typebotDelayMessage,
         typebotRestartMessage
     } = typebot;
+
+    // A URL é chamada pelo servidor: recusa endereços internos.
+    try {
+        await assertSafeExternalUrl(url);
+    } catch (err) {
+        logger.warn(`Typebot da integração ${typebot.id} ignorado: URL não permitida`);
+        return;
+    }
 
     const number = msg.key.remoteJid.replace(/\D/g, '');
 

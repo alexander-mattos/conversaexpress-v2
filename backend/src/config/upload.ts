@@ -90,3 +90,41 @@ export default {
     }
   })
 };
+
+// Upload dos arquivos de uma lista (POST /files/uploadList/:fileListId).
+// A pasta vem da rota, já conferida antes do multer gravar, e não do corpo da
+// requisição: antes, um fileId de outra empresa no corpo sobrescrevia os
+// arquivos dela. O nome leva timestamp, como os demais uploads.
+export const fileListFolder = (fileListId: string | number): string => {
+  if (!/^\d+$/.test(String(fileListId))) {
+    throw new AppError("ERR_INVALID_UPLOAD_TYPE", 400);
+  }
+  return path.resolve(publicFolder, "fileList", String(fileListId));
+};
+
+export const fileListUploadConfig = {
+  limits: { fileSize: MAX_UPLOAD_SIZE, files: 20 },
+  fileFilter(req, file, cb) {
+    if (isBlockedFile(file.originalname)) {
+      return cb(new AppError("ERR_INVALID_FILE_TYPE", 400));
+    }
+    return cb(null, true);
+  },
+  storage: multer.diskStorage({
+    destination(req, file, cb) {
+      let folder: string;
+      try {
+        folder = fileListFolder(req.params.fileListId);
+      } catch (err) {
+        return cb(err, "");
+      }
+      if (!fs.existsSync(folder)) {
+        fs.mkdirSync(folder, { recursive: true, mode: 0o755 });
+      }
+      return cb(null, folder);
+    },
+    filename(req, file, cb) {
+      return cb(null, `${Date.now()}_${sanitizeFileName(file.originalname)}`);
+    }
+  })
+};

@@ -1,5 +1,11 @@
 import { Request, Response } from "express";
+import { Op } from "sequelize";
 import AppError from "../errors/AppError";
+import { assertExistsInCompany } from "../helpers/CompanyAccess";
+import Prompt from "../models/Prompt";
+import Queue from "../models/Queue";
+import QueueIntegrations from "../models/QueueIntegrations";
+import Whatsapp from "../models/Whatsapp";
 import withoutSession from "../helpers/WhatsappWithoutSession";
 import { getIO } from "../libs/socket";
 import { removeWbot } from "../libs/wbot";
@@ -39,6 +45,28 @@ const ensureAdmin = (req: Request): void => {
   }
 };
 
+// Filas, prompt e integração vinculados à conexão precisam ser da empresa.
+const assertWhatsappRefs = async (data: Record<string, any>, req: Request): Promise<void> => {
+  if (data.promptId) await assertExistsInCompany(Prompt, data.promptId, req.user);
+  if (data.transferQueueId) await assertExistsInCompany(Queue, data.transferQueueId, req.user);
+  if (data.integrationId) await assertExistsInCompany(QueueIntegrations, data.integrationId, req.user);
+  if (Array.isArray(data.queueIds) && data.queueIds.length > 0) {
+    const ids = [...new Set(data.queueIds.map(Number))];
+    const count = await Queue.count({ where: { id: { [Op.in]: ids }, companyId: req.user.companyId } });
+    if (count !== ids.length) throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+};
+
+// O token autentica a API de mensagens: não pode repetir entre conexões.
+const assertUniqueToken = async (token: unknown, whatsappId?: string | number): Promise<void> => {
+  if (!token) return;
+  const other = await Whatsapp.findOne({
+    where: { token: String(token), ...(whatsappId ? { id: { [Op.ne]: whatsappId } } : {}) },
+    attributes: ["id"]
+  });
+  if (other) throw new AppError("ERR_WAPP_TOKEN_ALREADY_EXISTS", 400);
+};
+
 interface QueryParams {
   session?: number | string;
 }
@@ -47,8 +75,9 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   const { companyId } = req.user;
   // A coluna session guarda as chaves do Baileys: nunca sai pela API.
   const whatsapps = await ListWhatsAppsService({ companyId, session: 0 });
+  const isAdmin = req.user.profile === "admin";
 
-  return res.status(200).json(whatsapps);
+  return res.status(200).json(whatsapps.map(whatsapp => withoutSession(whatsapp, isAdmin)));
 };
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
@@ -73,6 +102,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     expiresInactiveMessage
   }: WhatsappData = req.body;
   const { companyId } = req.user;
+  await assertWhatsappRefs(req.body, req);
 
   const { whatsapp, oldDefaultWhatsapp } = await CreateWhatsAppService({
     name,
@@ -110,7 +140,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     });
   }
 
-  return res.status(200).json(withoutSession(whatsapp));
+  return res.status(200).json(withoutSession(whatsapp, true));
 };
 
 export const show = async (req: Request, res: Response): Promise<Response> => {
@@ -120,7 +150,7 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
 
   const whatsapp = await ShowWhatsAppService(whatsappId, companyId, 0);
 
-  return res.status(200).json(whatsapp);
+  return res.status(200).json(withoutSession(whatsapp, req.user.profile === "admin"));
 };
 
 export const update = async (
@@ -130,8 +160,12 @@ export const update = async (
   ensureAdmin(req);
   const { whatsappId } = req.params;
   // O cliente não pode sobrescrever as chaves da sessão.
-  const { session: _session, ...whatsappData } = req.body;
+  // Nem o estado da sessão (status, QR): esses vêm só do WhatsApp. Antes,
+  // salvar a conexão regravava o status de quando o modal foi aberto.
+  const { session: _session, status: _status, qrcode: _qrcode, retries: _retries, companyId: _companyId, ...whatsappData } = req.body;
   const { companyId } = req.user;
+  await assertWhatsappRefs(whatsappData, req);
+  await assertUniqueToken(whatsappData.token, whatsappId);
 
   const { whatsapp, oldDefaultWhatsapp } = await UpdateWhatsAppService({
     whatsappData,
@@ -152,7 +186,7 @@ export const update = async (
     });
   }
 
-  return res.status(200).json(withoutSession(whatsapp));
+  return res.status(200).json(withoutSession(whatsapp, true));
 };
 
 export const remove = async (

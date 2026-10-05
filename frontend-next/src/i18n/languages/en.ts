@@ -335,6 +335,10 @@ const messages = {
 					connected: {
 						title: "Connection established!",
 					},
+					pending: {
+					  title: "Session ended on the phone",
+					  content: "Click \"New QR CODE\" and scan the code with your phone to connect again.",
+					},
 					timeout: {
 						title: "Connection to phone was lost",
 						content: "Make sure your phone is connected to the internet and WhatsApp is open, or click the 'Disconnect' button to get a new QR Code",
@@ -350,6 +354,7 @@ const messages = {
 				},
 			},
 			whatsappModal: {
+				none: "None",
 				title: {
 					add: "Add WhatsApp",
 					edit: "Edit WhatsApp",
@@ -492,6 +497,7 @@ const messages = {
 				},
 			},
 			promptModal: {
+				apiKeyKeep: "Leave blank to keep the current key",
 				form: {
 					name: "Name",
 					prompt: "Prompt",
@@ -543,6 +549,9 @@ const messages = {
 				},
 			},
 			prompts: {
+				toasts: {
+				  deleted: "Prompt deleted successfully.",
+				},
 				title: "Prompts",
 				table: {
 					name: "Name",
@@ -879,6 +888,9 @@ const messages = {
 				},
 			},
 			queueIntegration: {
+				toasts: {
+				  deleted: "Integration deleted successfully.",
+				},
 				title: "Integrations",
 				table: {
 					id: "ID",
@@ -1537,6 +1549,7 @@ const messages = {
 				extraInfo: "Other information",
 			},
 			fileModal: {
+				fileRequired: "Choose a file",
 				title: {
 					add: "Add file list",
 					edit: "Edit file list",
@@ -1600,6 +1613,12 @@ const messages = {
 				},
 			},
 			backendErrors: {
+				ERR_PROMPT_IN_USE: "Could not delete: this prompt is used by a connection.",
+				ERR_INTEGRATION_INVALID_URL: "Invalid URL. Use an http:// or https:// address.",
+				ERR_INTEGRATION_URL_NOT_ALLOWED: "Address not allowed: the URL cannot point to the server internal network.",
+				ERR_INVALID_FILE_OPTIONS: "Invalid file list items.",
+				ERR_WAPP_TOKEN_ALREADY_EXISTS: "This token is already used by another connection.",
+				ERR_NO_FILE_FOUND: "File list not found.",
 				ERR_LAST_ADMIN: "The company needs at least one administrator.",
 				ERR_CANNOT_DELETE_SELF: "You cannot delete your own user.",
 				ERR_INVALID_PROFILE: "Invalid profile.",

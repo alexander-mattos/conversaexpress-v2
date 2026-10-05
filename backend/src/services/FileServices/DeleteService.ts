@@ -1,5 +1,6 @@
 import Files from "../../models/Files";
 import AppError from "../../errors/AppError";
+import { removeFileListFolder } from "../../helpers/FileListStorage";
 
 const DeleteService = async (id: string | number, companyId: number): Promise<void> => {
   const file = await Files.findOne({
@@ -11,6 +12,8 @@ const DeleteService = async (id: string | number, companyId: number): Promise<vo
   }
 
   await file.destroy();
+  // Os arquivos da lista também saem do disco (antes ficavam públicos).
+  removeFileListFolder(file.id);
 };
 
 export default DeleteService;

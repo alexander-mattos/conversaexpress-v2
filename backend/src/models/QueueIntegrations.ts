@@ -10,11 +10,16 @@ import {
     AutoIncrement,
     BelongsTo,
     ForeignKey,
-    Default
+    Default,
+    DefaultScope
 } from "sequelize-typescript";
 import Queue from "./Queue";
 import Company from "./Company";
 
+// As credenciais (jsonContent do Dialogflow) não saem por padrão: a fila
+// inclui a integração nos tickets, que chegam a todos os usuários. Só a tela
+// de edição (admin) as lê, com unscoped().
+@DefaultScope(() => ({ attributes: { exclude: ["jsonContent"] } }))
 @Table
 class QueueIntegrations extends Model {
     @PrimaryKey

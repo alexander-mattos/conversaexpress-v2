@@ -6,7 +6,7 @@ import ShowPromptService from "./ShowPromptService";
 interface PromptData {
     id?: number;
     name: string;
-    apiKey: string;
+    apiKey?: string;
     prompt: string;
     maxTokens?: number;
     temperature?: number;
@@ -35,20 +35,23 @@ const UpdatePromptService = async ({
     const promptSchema = Yup.object().shape({
         name: Yup.string().required("ERR_PROMPT_NAME_INVALID"),
         prompt: Yup.string().required("ERR_PROMPT_PROMPT_INVALID"),
-        apiKey: Yup.string().required("ERR_PROMPT_APIKEY_INVALID"),
         queueId: Yup.number().required("ERR_PROMPT_QUEUEID_INVALID"),
         maxMessages: Yup.number().required("ERR_PROMPT_MAX_MESSAGES_INVALID")
     });
 
-    const { name, apiKey, prompt, maxTokens, temperature, promptTokens, completionTokens, totalTokens, queueId, maxMessages, model } = promptData;
+    const { name, apiKey, prompt, maxTokens, temperature, queueId, maxMessages, model } = promptData;
 
     try {
-        await promptSchema.validate({ name, apiKey, prompt, maxTokens, temperature, promptTokens, completionTokens, totalTokens, queueId, maxMessages });
+        await promptSchema.validate({ name, prompt, queueId, maxMessages });
     } catch (err) {
-        throw new AppError(`${JSON.stringify(err, undefined, 2)}`);
+        throw new AppError(err.message);
     }
 
-    await promptTable.update({ name, apiKey, prompt, maxTokens, temperature, promptTokens, completionTokens, totalTokens, queueId, maxMessages, model });
+    // A chave só muda quando uma nova é enviada (a tela não recebe a atual).
+    await promptTable.update({
+        name, prompt, maxTokens, temperature, queueId, maxMessages, model,
+        ...(apiKey ? { apiKey } : {})
+    });
     await promptTable.reload();
     return promptTable;
 };

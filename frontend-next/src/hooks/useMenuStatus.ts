@@ -27,8 +27,9 @@ const NO_FLAGS: PlanFlags = {
 };
 
 // Recursos liberados pelo plano da empresa (GET /companies/listPlan/:id).
-export const usePlanFlags = (user: User | null): PlanFlags => {
-  const [flags, setFlags] = useState<PlanFlags>(NO_FLAGS);
+// "loaded" diferencia "ainda carregando" de "plano sem o recurso".
+export const usePlanFlagsState = (user: User | null): { flags: PlanFlags; loaded: boolean } => {
+  const [state, setState] = useState<{ flags: PlanFlags; loaded: boolean }>({ flags: NO_FLAGS, loaded: false });
   const companyId = user?.companyId;
 
   useEffect(() => {
@@ -37,16 +38,21 @@ export const usePlanFlags = (user: User | null): PlanFlags => {
     api
       .get<{ plan: Partial<PlanFlags> }>(`/companies/listPlan/${companyId}`)
       .then(({ data }) => {
-        if (active) setFlags({ ...NO_FLAGS, ...data.plan });
+        if (active) setState({ flags: { ...NO_FLAGS, ...data.plan }, loaded: true });
       })
-      .catch(toastError);
+      .catch(err => {
+        toastError(err);
+        if (active) setState(current => ({ ...current, loaded: true }));
+      });
     return () => {
       active = false;
     };
   }, [companyId]);
 
-  return flags;
+  return state;
 };
+
+export const usePlanFlags = (user: User | null): PlanFlags => usePlanFlagsState(user).flags;
 
 export const useVersion = (): string => {
   const [version, setVersion] = useState("");

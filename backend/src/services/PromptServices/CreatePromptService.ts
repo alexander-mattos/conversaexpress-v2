@@ -33,10 +33,12 @@ const CreatePromptService = async (promptData: PromptData): Promise<Prompt> => {
     try {
         await promptSchema.validate({ name, apiKey, prompt, queueId,maxMessages,companyId });
     } catch (err) {
-        throw new AppError(`${JSON.stringify(err, undefined, 2)}`);
+        throw new AppError(err.message);
     }
 
-    let promptTable = await Prompt.create({ ...promptData });
+    const { maxTokens, temperature, model } = promptData;
+    // Os contadores de tokens não vêm do cliente.
+    let promptTable = await Prompt.create({ name, apiKey, prompt, queueId, maxMessages, companyId, maxTokens, temperature, model });
     promptTable = await ShowPromptService({ promptId: promptTable.id, companyId });
 
     return promptTable;
