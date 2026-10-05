@@ -1,7 +1,13 @@
-import * as Yup from "yup";
-import { assertCompanyAccess, assertRecordInCompany } from "../helpers/CompanyAccess";
 import { Request, Response } from "express";
+import AppError from "../errors/AppError";
 import { getIO } from "../libs/socket";
+import {
+  assertChatOwner,
+  chatIncludes,
+  emitToChatMembers,
+  loadChatForMember,
+  parseChatUserIds
+} from "../helpers/ChatAccess";
 
 import CreateService from "../services/ChatService/CreateService";
 import ListService from "../services/ChatService/ListService";
@@ -9,34 +15,35 @@ import ShowFromUuidService from "../services/ChatService/ShowFromUuidService";
 import DeleteService from "../services/ChatService/DeleteService";
 import FindMessages from "../services/ChatService/FindMessages";
 import UpdateService from "../services/ChatService/UpdateService";
+import CreateMessageService from "../services/ChatService/CreateMessageService";
 
 import Chat from "../models/Chat";
-import CreateMessageService from "../services/ChatService/CreateMessageService";
-import User from "../models/User";
-import ChatUser from "../models/ChatUser";
 
 type IndexQuery = {
   pageNumber: string;
-  companyId: string | number;
-  ownerId?: number;
 };
 
-type StoreData = {
-  users: any[];
-  title: string;
+const memberIds = (chat: Chat): number[] => (chat.users ?? []).map(chatUser => Number(chatUser.userId));
+
+const emitChatUser = (companyId: number, chat: Chat, action: "create" | "update") => {
+  const io = getIO();
+  for (const userId of memberIds(chat)) {
+    io.to(`user-${userId}`).emit(`company-${companyId}-chat-user-${userId}`, { action, record: chat });
+  }
 };
 
-type FindParams = {
-  companyId: number;
-  ownerId?: number;
+const parseTitle = (title: unknown): string => {
+  const value = String(title ?? "").trim();
+  if (!value) throw new AppError("ERR_CHAT_TITLE_REQUIRED", 400);
+  return value.slice(0, 255);
 };
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
   const { pageNumber } = req.query as unknown as IndexQuery;
-  const ownerId = +req.user.id;
 
   const { records, count, hasMore } = await ListService({
-    ownerId,
+    ownerId: +req.user.id,
+    companyId: req.user.companyId,
     pageNumber
   });
 
@@ -46,48 +53,33 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
 export const store = async (req: Request, res: Response): Promise<Response> => {
   const { companyId } = req.user;
   const ownerId = +req.user.id;
-  const data = req.body as StoreData;
+  const title = parseTitle(req.body.title);
+  const userIds = await parseChatUserIds(req.body.users, companyId);
 
-  const record = await CreateService({
-    ...data,
-    ownerId,
-    companyId
-  });
-
-  const io = getIO();
-
-  record.users.forEach(user => {
-    io.to(`user-${user.userId}`).emit(`company-${companyId}-chat-user-${user.userId}`, {
-      action: "create",
-      record
-    });
-  });
+  const record = await CreateService({ title, userIds, ownerId, companyId });
+  emitChatUser(companyId, record, "create");
 
   return res.status(200).json(record);
 };
 
-export const update = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const update = async (req: Request, res: Response): Promise<Response> => {
   const { companyId } = req.user;
-  const data = req.body;
   const { id } = req.params;
-  await assertRecordInCompany(Chat, id, req.user);
+  const chat = await loadChatForMember(id, req.user);
+  // Só o dono edita (antes qualquer usuário da empresa trocava título e membros).
+  assertChatOwner(chat, req.user);
+  const before = memberIds(chat);
 
   const record = await UpdateService({
-    ...data,
-    id: +id
+    id: chat.id,
+    title: req.body.title !== undefined ? parseTitle(req.body.title) : undefined,
+    userIds: req.body.users !== undefined ? await parseChatUserIds(req.body.users, companyId) : undefined
   });
 
-  const io = getIO();
-
-  record.users.forEach(user => {
-    io.to(`user-${user.userId}`).emit(`company-${companyId}-chat-user-${user.userId}`, {
-      action: "update",
-      record
-    });
-  });
+  emitChatUser(companyId, record, "update");
+  const after = memberIds(record);
+  const removed = before.filter(userId => !after.includes(userId));
+  if (removed.length > 0) emitToChatMembers(companyId, removed, record.id, { action: "delete", id: record.id });
 
   return res.status(200).json(record);
 };
@@ -95,116 +87,71 @@ export const update = async (
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
 
-  const record = await ShowFromUuidService(id);
-  await assertCompanyAccess(record.companyId, req.user);
+  const found = await ShowFromUuidService(id);
+  const record = await loadChatForMember(found.id, req.user);
 
   return res.status(200).json(record);
 };
 
-export const remove = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const remove = async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
-  await assertRecordInCompany(Chat, id, req.user);
   const { companyId } = req.user;
+  const chat = await loadChatForMember(id, req.user);
+  assertChatOwner(chat, req.user);
+  const members = memberIds(chat);
 
-  await DeleteService(id);
-
-  const io = getIO();
-  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-chat`, {
-    action: "delete",
-    id
-  });
+  await DeleteService(String(chat.id));
+  emitToChatMembers(companyId, members, chat.id, { action: "delete", id: chat.id });
 
   return res.status(200).json({ message: "Chat deleted" });
 };
 
-export const saveMessage = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const saveMessage = async (req: Request, res: Response): Promise<Response> => {
   const { companyId } = req.user;
-  const { message } = req.body;
   const { id } = req.params;
-  await assertRecordInCompany(Chat, id, req.user);
-  const senderId = +req.user.id;
-  const chatId = +id;
+  const chat = await loadChatForMember(id, req.user);
+  const message = String(req.body.message ?? "").trim();
+  if (!message) throw new AppError("ERR_CHAT_MESSAGE_REQUIRED", 400);
 
   const newMessage = await CreateMessageService({
-    chatId,
-    senderId,
+    chatId: chat.id,
+    senderId: +req.user.id,
     message
   });
 
-  const chat = await Chat.findByPk(chatId, {
-    include: [
-      { model: User, as: "owner" },
-      { model: ChatUser, as: "users" }
-    ]
-  });
-
-  const io = getIO();
-  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-chat-${chatId}`, {
+  const updated = await Chat.findByPk(chat.id, { include: chatIncludes() });
+  emitToChatMembers(companyId, memberIds(updated), chat.id, {
     action: "new-message",
     newMessage,
-    chat
-  });
-
-  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-chat`, {
-    action: "new-message",
-    newMessage,
-    chat
+    chat: updated
   });
 
   return res.json(newMessage);
 };
 
-export const checkAsRead = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const checkAsRead = async (req: Request, res: Response): Promise<Response> => {
   const { companyId } = req.user;
-  const { userId } = req.body;
   const { id } = req.params;
-  await assertRecordInCompany(Chat, id, req.user);
+  const chat = await loadChatForMember(id, req.user);
 
-  const chatUser = await ChatUser.findOne({ where: { chatId: id, userId } });
+  // Sempre o próprio usuário (antes o userId vinha do corpo).
+  const chatUser = chat.users.find(item => Number(item.userId) === Number(req.user.id));
   await chatUser.update({ unreads: 0 });
 
-  const chat = await Chat.findByPk(id, {
-    include: [
-      { model: User, as: "owner" },
-      { model: ChatUser, as: "users" }
-    ]
-  });
+  const updated = await Chat.findByPk(chat.id, { include: chatIncludes() });
+  emitToChatMembers(companyId, [+req.user.id], chat.id, { action: "update", chat: updated });
 
-  const io = getIO();
-  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-chat-${id}`, {
-    action: "update",
-    chat
-  });
-
-  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-chat`, {
-    action: "update",
-    chat
-  });
-
-  return res.json(chat);
+  return res.json(updated);
 };
 
-export const messages = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const messages = async (req: Request, res: Response): Promise<Response> => {
   const { pageNumber } = req.query as unknown as IndexQuery;
-  const { id: chatId } = req.params;
-  await assertRecordInCompany(Chat, chatId, req.user);
-  const ownerId = +req.user.id;
+  const { id } = req.params;
+  const chat = await loadChatForMember(id, req.user);
 
   const { records, count, hasMore } = await FindMessages({
-    chatId,
-    ownerId,
+    chatId: String(chat.id),
+    ownerId: +req.user.id,
     pageNumber
   });
 

@@ -32,21 +32,13 @@ export default async function CreateMessageService({
     ]
   });
 
-  const sender = await User.findByPk(senderId);
+  const sender = await User.findByPk(senderId, { attributes: ["id", "name"] });
 
   await newMessage.chat.update({ lastMessage: `${sender.name}: ${message}` });
 
-  const chatUsers = await ChatUser.findAll({
-    where: { chatId }
-  });
-
-  for (let chatUser of chatUsers) {
-    if (chatUser.userId === senderId) {
-      await chatUser.update({ unreads: 0 });
-    } else {
-      await chatUser.update({ unreads: chatUser.unreads + 1 });
-    }
-  }
+  // Um update para cada grupo (antes um por participante, em sequência).
+  await ChatUser.update({ unreads: 0 }, { where: { chatId, userId: senderId } });
+  await ChatUser.increment("unreads", { where: { chatId, userId: { [Op.ne]: senderId } } });
 
   return newMessage;
 }

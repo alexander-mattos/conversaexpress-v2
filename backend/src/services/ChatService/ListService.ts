@@ -1,10 +1,11 @@
 import { Op } from "sequelize";
 import Chat from "../../models/Chat";
 import ChatUser from "../../models/ChatUser";
-import User from "../../models/User";
+import { chatIncludes } from "../../helpers/ChatAccess";
 
 interface Request {
   ownerId: number;
+  companyId: number;
   pageNumber?: string;
 }
 
@@ -16,6 +17,7 @@ interface Response {
 
 const ListService = async ({
   ownerId,
+  companyId,
   pageNumber = "1"
 }: Request): Promise<Response> => {
   const chatUsers = await ChatUser.findAll({
@@ -31,12 +33,10 @@ const ListService = async ({
     where: {
       id: {
         [Op.in]: chatIds
-      }
+      },
+      companyId
     },
-    include: [
-      { model: User, as: "owner" },
-      { model: ChatUser, as: "users", include: [{ model: User, as: "user" }] }
-    ],
+    include: chatIncludes(),
     limit,
     offset,
     order: [["createdAt", "DESC"]]

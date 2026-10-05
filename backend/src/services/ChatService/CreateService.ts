@@ -1,36 +1,24 @@
 import Chat from "../../models/Chat";
 import ChatUser from "../../models/ChatUser";
-import User from "../../models/User";
+import { chatIncludes } from "../../helpers/ChatAccess";
 
 interface Data {
   ownerId: number;
   companyId: number;
-  users: any[];
+  userIds: number[];
   title: string;
 }
 
-const CreateService = async (data: Data): Promise<Chat> => {
-  const { ownerId, companyId, users, title } = data;
+// O dono sempre participa, uma vez só (antes ficava duplicado se estivesse na
+// lista, ou de fora se a lista viesse vazia).
+const CreateService = async ({ ownerId, companyId, userIds, title }: Data): Promise<Chat> => {
+  const record = await Chat.create({ ownerId, companyId, title });
 
-  const record = await Chat.create({
-    ownerId,
-    companyId,
-    title
-  });
-
-  if (Array.isArray(users) && users.length > 0) {
-    await ChatUser.create({ chatId: record.id, userId: ownerId });
-    for (let user of users) {
-      await ChatUser.create({ chatId: record.id, userId: user.id });
-    }
+  for (const userId of new Set([ownerId, ...userIds])) {
+    await ChatUser.create({ chatId: record.id, userId });
   }
 
-  await record.reload({
-    include: [
-      { model: ChatUser, as: "users", include: [{ model: User, as: "user" }] },
-      { model: User, as: "owner" }
-    ]
-  });
+  await record.reload({ include: chatIncludes() });
 
   return record;
 };

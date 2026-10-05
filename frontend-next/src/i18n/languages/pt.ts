@@ -754,6 +754,9 @@ const messages = {
         success: "Tag salvo com sucesso.",
       },
       chat: {
+        messagePlaceholder: "Digite uma mensagem",
+        selectChat: "Selecione uma conversa ou crie uma nova.",
+        noChats: "Nenhuma conversa",
         toasts: {
           fillTitle: "Por favor, preencha o título da conversa.",
           fillUser: "Por favor, selecione pelo menos um usuário.",
@@ -1231,6 +1234,10 @@ const messages = {
         signNow: "Assinar agora!",
       },
       announcements: {
+        noRecords: "Nenhum registro",
+        removeMedia: "Remover a imagem do informativo?",
+        removeMediaMessage: "A imagem será apagada.",
+        imageOnly: "Use uma imagem PNG, JPG ou WebP.",
         active: "Ativo",
         inactive: "Inativo",
         title: "Informativos",
@@ -1244,7 +1251,7 @@ const messages = {
         },
         table: {
           priority: "Prioridade",
-          title: "Title",
+          title: "Título",
           text: "Texto",
           mediaName: "Arquivo",
           status: "Status",
@@ -1258,7 +1265,7 @@ const messages = {
           form: {
             priority: "Prioridade",
             required: "Campo obrigatório",
-            title: "Title",
+            title: "Título",
             text: "Texto",
             mediaPath: "Arquivo",
             status: "Status",

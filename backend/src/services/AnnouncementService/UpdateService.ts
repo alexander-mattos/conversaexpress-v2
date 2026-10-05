@@ -3,11 +3,10 @@ import Announcement from "../../models/Announcement";
 
 interface Data {
   id: number | string;
-  priority: string;
-  title: string;
-  text: string;
-  status: string;
-  companyId: number;
+  priority?: number;
+  title?: string;
+  text?: string;
+  status?: boolean;
 }
 
 const UpdateService = async (data: Data): Promise<Announcement> => {
@@ -19,7 +18,8 @@ const UpdateService = async (data: Data): Promise<Announcement> => {
     throw new AppError("ERR_NO_ANNOUNCEMENT_FOUND", 404);
   }
 
-  await record.update(data);
+  const { id: _id, ...fields } = data;
+  await record.update(fields);
 
   return record;
 };
