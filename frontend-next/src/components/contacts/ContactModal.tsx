@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useCallback, useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -80,6 +80,16 @@ export default function ContactModal({
     resolver: zodResolver(schema),
     defaultValues: EMPTY
   });
+  // Remonta os campos depois de carregar o registro: sem isso, o rótulo podia
+  // ficar por cima do valor quando os dados chegavam com o diálogo já aberto.
+  const [formKey, setFormKey] = useState(0);
+  const loadValues = useCallback(
+    (values: Parameters<typeof reset>[0]) => {
+      reset(values);
+      setFormKey(key => key + 1);
+    },
+    [reset]
+  );
   const { fields, append, remove } = useFieldArray({ control, name: "extraInfo" });
   const whatsapp = useWatch({ control, name: "whatsapp" });
 
@@ -90,7 +100,7 @@ export default function ContactModal({
     api
       .get<SavedContact>(`/contacts/${contactId}`)
       .then(({ data }) =>
-        reset({
+        loadValues({
           name: data.name ?? "",
           number: data.number ?? "",
           email: data.email ?? "",
@@ -99,7 +109,7 @@ export default function ContactModal({
         })
       )
       .catch(toastError);
-  }, [open, contactId, initialValues, reset]);
+  }, [open, contactId, initialValues, reset, loadValues]);
 
   const handleClose = () => {
     onClose();
@@ -126,7 +136,7 @@ export default function ContactModal({
     <Dialog open={open} onClose={handleClose} maxWidth="lg" scroll="paper">
       <DialogTitle>{contactId ? t("contactModal.title.edit") : t("contactModal.title.add")}</DialogTitle>
       <Box component="form" noValidate onSubmit={handleSubmit(onSubmit)}>
-        <DialogContent dividers>
+        <DialogContent dividers key={formKey}>
           <Typography variant="subtitle1" gutterBottom>
             {t("contactModal.form.mainInfo")}
           </Typography>

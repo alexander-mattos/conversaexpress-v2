@@ -2,11 +2,11 @@ import QueueOption from "../../models/QueueOption";
 import ShowService from "./ShowService";
 
 interface QueueData {
-  queueId?: string;
+  queueId?: string | number;
   title?: string;
   option?: string;
-  message?: string;
-  parentId?: string;
+  message?: string | null;
+  parentId?: string | number | null;
 }
 
 const UpdateService = async (

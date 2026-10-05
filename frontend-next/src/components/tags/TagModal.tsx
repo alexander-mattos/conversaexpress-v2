@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -64,6 +64,16 @@ export default function TagModal({
     setValue,
     formState: { errors, isSubmitting }
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: emptyValues });
+  // Remonta os campos depois de carregar o registro: sem isso, o rótulo podia
+  // ficar por cima do valor quando os dados chegavam com o diálogo já aberto.
+  const [formKey, setFormKey] = useState(0);
+  const loadValues = useCallback(
+    (values: Parameters<typeof reset>[0]) => {
+      reset(values);
+      setFormKey(key => key + 1);
+    },
+    [reset]
+  );
   const color = useWatch({ control, name: "color" });
   // inputRef: o campo de texto (e não a amostra de cor dentro dele) é o da cor.
   const colorField = register("color");
@@ -72,9 +82,9 @@ export default function TagModal({
     if (!open || !tagId) return;
     api
       .get<{ name: string; color: string; kanban: number }>(`/tags/${tagId}`)
-      .then(({ data }) => reset({ name: data.name ?? "", color: data.color ?? "", kanban: data.kanban === 1 }))
+      .then(({ data }) => loadValues({ name: data.name ?? "", color: data.color ?? "", kanban: data.kanban === 1 }))
       .catch(toastError);
-  }, [open, tagId, reset]);
+  }, [open, tagId, reset, loadValues]);
 
   if (!user) return null;
   const canKanban = user.profile === "admin" || user.profile === "supervisor";
@@ -109,7 +119,7 @@ export default function TagModal({
     <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth scroll="paper">
       <DialogTitle>{tagId ? t("tagModal.title.edit") : t("tagModal.title.add")}</DialogTitle>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <DialogContent dividers>
+        <DialogContent dividers key={formKey}>
           <TextField
             {...register("name")}
             label={t("tagModal.form.name")}

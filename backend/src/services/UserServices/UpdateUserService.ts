@@ -54,7 +54,8 @@ const UpdateUserService = async ({
 	allTicket: Yup.string()
   });
 
-  const { email, password, profile, name, queueIds = [], whatsappId, allTicket } = userData;
+  // Sem queueIds no corpo, as filas ficam como estão (antes eram apagadas).
+  const { email, password, profile, name, queueIds, whatsappId, allTicket } = userData;
 
   try {
     await schema.validate({ email, password, profile, name, allTicket });
@@ -67,13 +68,13 @@ const UpdateUserService = async ({
     password,
     profile,
     name,
-    whatsappId: whatsappId || null,
+    ...(whatsappId !== undefined ? { whatsappId: whatsappId || null } : {}),
 	allTicket,
     // Troca de senha invalida os refresh tokens já emitidos.
     ...(password ? { tokenVersion: (user.tokenVersion || 0) + 1 } : {})
   });
 
-  await user.$set("queues", queueIds);
+  if (Array.isArray(queueIds)) await user.$set("queues", queueIds);
 
   await user.reload();
 
