@@ -4,13 +4,13 @@ import isSuper from "../middleware/isSuper";
 
 import * as AnnouncementController from "../controllers/AnnouncementController";
 import multer from "multer";
-import uploadConfig from "../config/upload";
+import { announcementUploadConfig } from "../config/upload";
 
-const upload = multer(uploadConfig);
+const upload = multer(announcementUploadConfig);
 
 const routes = express.Router();
 
-routes.get("/announcements/list", isAuth, AnnouncementController.findList);
+routes.get("/announcements/list", isAuth, isSuper, AnnouncementController.findList);
 
 routes.get("/announcements", isAuth, AnnouncementController.index);
 

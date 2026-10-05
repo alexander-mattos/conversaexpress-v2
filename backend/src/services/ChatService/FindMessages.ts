@@ -27,7 +27,7 @@ const FindMessages = async ({
   });
 
   if (userInChat === 0) {
-    throw new AppError("UNAUTHORIZED", 400);
+    throw new AppError("ERR_NO_PERMISSION", 403);
   }
 
   const limit = 20;

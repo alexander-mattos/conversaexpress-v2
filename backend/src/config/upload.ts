@@ -128,3 +128,29 @@ export const fileListUploadConfig = {
     }
   })
 };
+
+// Imagem do informativo: só formatos de imagem, gravada em public/ (a URL e a
+// exclusão usam /public/<arquivo>), com timestamp no nome.
+const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp"];
+export const isImageFile = (file: { originalname: string; mimetype: string }): boolean =>
+  IMAGE_EXTENSIONS.includes(path.extname(String(file.originalname || "")).toLowerCase()) &&
+  /^image\/(png|jpe?g|webp)$/.test(String(file.mimetype || ""));
+
+export const announcementUploadConfig = {
+  limits: { fileSize: 10 * 1024 * 1024, files: 1 },
+  fileFilter(req, file, cb) {
+    if (!isImageFile(file)) return cb(new AppError("ERR_INVALID_FILE_TYPE", 400));
+    return cb(null, true);
+  },
+  storage: multer.diskStorage({
+    destination(req, file, cb) {
+      if (!fs.existsSync(publicFolder)) fs.mkdirSync(publicFolder, { recursive: true, mode: 0o755 });
+      return cb(null, publicFolder);
+    },
+    filename(req, file, cb) {
+      return cb(null, `${Date.now()}_${sanitizeFileName(file.originalname)}`);
+    }
+  })
+};
+
+export const publicFilePath = (fileName: string): string => path.resolve(publicFolder, path.basename(String(fileName || "")));

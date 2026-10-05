@@ -33,6 +33,8 @@ import logo from "@/assets/logo.png";
 import MainMenu from "./MainMenu";
 import NotificationsPopOver from "./NotificationsPopOver";
 import NotificationsVolume from "./NotificationsVolume";
+import ChatPopover from "./ChatPopover";
+import AnnouncementsPopover from "./AnnouncementsPopover";
 import UserModal from "@/components/users/UserModal";
 
 const DRAWER_WIDTH = 240;
@@ -217,6 +219,10 @@ export default function AppShell({ children }: { children: ReactNode }) {
           </IconButton>
 
           <NotificationsPopOver volume={volume} />
+
+          <AnnouncementsPopover />
+
+          <ChatPopover volume={volume} />
 
           <IconButton
             aria-label="account of current user"

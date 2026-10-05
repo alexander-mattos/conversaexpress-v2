@@ -745,6 +745,9 @@ const messages = {
         success: "Etiqueta guardada con éxito.",
       },
       chat: {
+        messagePlaceholder: "Escriba un mensaje",
+        selectChat: "Seleccione una conversación o cree una nueva.",
+        noChats: "Ninguna conversación",
         toasts: {
           fillTitle: "Por favor, complete el título de la conversación.",
           fillUser: "Por favor, seleccione al menos un usuario.",
@@ -1173,6 +1176,10 @@ const messages = {
         signNow: "¡Suscribirse ahora!",
       },
       announcements: {
+        noRecords: "Ningún registro",
+        removeMedia: "¿Eliminar la imagen del informativo?",
+        removeMediaMessage: "La imagen será eliminada.",
+        imageOnly: "Use una imagen PNG, JPG o WebP.",
         active: "Activo",
         inactive: "Inactivo",
         title: "Informativos",

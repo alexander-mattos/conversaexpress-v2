@@ -5,6 +5,8 @@ import Announcement from "../../models/Announcement";
 interface Request {
   searchParam?: string;
   pageNumber?: string;
+  // Só o super (tela de administração) vê os inativos.
+  includeInactive?: boolean;
 }
 
 interface Response {
@@ -15,11 +17,10 @@ interface Response {
 
 const ListService = async ({
   searchParam = "",
-  pageNumber = "1"
+  pageNumber = "1",
+  includeInactive = false
 }: Request): Promise<Response> => {
-  let whereCondition: any = {
-    status: true
-  };
+  let whereCondition: any = includeInactive ? {} : { status: true };
 
   if (!isEmpty(searchParam)) {
     whereCondition = {

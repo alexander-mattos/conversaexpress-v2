@@ -740,6 +740,9 @@ const messages = {
 				success: "Tag saved successfully.",
 			},
 			chat: {
+				messagePlaceholder: "Type a message",
+				selectChat: "Select a chat or create a new one.",
+				noChats: "No chats",
 				toasts: {
 					fillTitle: "Please fill in the conversation title.",
 					fillUser: "Please select at least one user.",
@@ -1208,6 +1211,10 @@ const messages = {
 				signNow: "Sign up now!",
 			},
 			announcements: {
+				noRecords: "No records",
+				removeMedia: "Remove the announcement image?",
+				removeMediaMessage: "The image will be deleted.",
+				imageOnly: "Use a PNG, JPG or WebP image.",
 				active: "Active",
 				inactive: "Inactive",
 				title: "Announcements",
