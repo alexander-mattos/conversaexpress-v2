@@ -20,8 +20,7 @@ const ListService = async ({ searchParam, companyId }: Request): Promise<Rating[
     order: [["name", "ASC"]],
     attributes: {
       exclude: ["createdAt", "updatedAt"]
-    },
-    group: ["Rating.id"]
+    }
   });
 
   return ratings;

@@ -341,6 +341,10 @@ const messages = {
           connected: {
             title: "Conexão estabelecida!",
           },
+          pending: {
+            title: "Sessão encerrada no celular",
+            content: "Clique em \"Novo QR CODE\" e leia o código com o celular para conectar de novo.",
+          },
           timeout: {
             title: "A conexão com o celular foi perdida",
             content:
@@ -357,6 +361,7 @@ const messages = {
         },
       },
       whatsappModal: {
+        none: "Nenhum",
         title: {
           add: "Adicionar WhatsApp",
           edit: "Editar WhatsApp",
@@ -505,6 +510,7 @@ const messages = {
         },
       },
       promptModal: {
+        apiKeyKeep: "Deixe em branco para manter a chave atual",
         form: {
           name: "Nome",
           prompt: "Prompt",
@@ -556,6 +562,9 @@ const messages = {
         },
       },
       prompts: {
+        toasts: {
+          deleted: "Prompt excluído com sucesso.",
+        },
         title: "Prompts",
         table: {
           name: "Nome",
@@ -895,6 +904,9 @@ const messages = {
         },
       },
       queueIntegration: {
+        toasts: {
+          deleted: "Integração excluída com sucesso.",
+        },
         title: "Integrações",
         table: {
           id: "ID",
@@ -1565,6 +1577,7 @@ const messages = {
         extraInfo: "Outras informações",
       },
       fileModal: {
+        fileRequired: "Escolha um arquivo",
         title: {
           add: "Adicionar lista de arquivos",
           edit: "Editar lista de arquivos",
@@ -1629,6 +1642,12 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_PROMPT_IN_USE: "Não foi possível excluir: este prompt está sendo usado em uma conexão.",
+        ERR_INTEGRATION_INVALID_URL: "URL inválida. Use um endereço http:// ou https://.",
+        ERR_INTEGRATION_URL_NOT_ALLOWED: "Endereço não permitido: a URL não pode apontar para a rede interna do servidor.",
+        ERR_INVALID_FILE_OPTIONS: "Arquivos da lista inválidos.",
+        ERR_WAPP_TOKEN_ALREADY_EXISTS: "Este token já está em uso em outra conexão.",
+        ERR_NO_FILE_FOUND: "Lista de arquivos não encontrada.",
         ERR_LAST_ADMIN: "A empresa precisa de pelo menos um administrador.",
         ERR_CANNOT_DELETE_SELF: "Você não pode excluir o seu próprio usuário.",
         ERR_INVALID_PROFILE: "Perfil inválido.",

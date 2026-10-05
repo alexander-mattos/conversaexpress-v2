@@ -336,6 +336,10 @@ const messages = {
           connected: {
             title: "¡Conexión establecida!",
           },
+          pending: {
+            title: "Sesión cerrada en el teléfono",
+            content: "Haga clic en \"Nuevo QR CODE\" y lea el código con el teléfono para conectar de nuevo.",
+          },
           timeout: {
             title: "Se perdió la conexión con el teléfono",
             content: "Asegúrese de que su teléfono esté conectado a internet y WhatsApp esté abierto, o haga clic en el botón 'Desconectar' para obtener un nuevo código QR",
@@ -351,6 +355,7 @@ const messages = {
         },
       },
       whatsappModal: {
+        none: "Ninguno",
         title: {
           add: "Agregar WhatsApp",
           edit: "Editar WhatsApp",
@@ -497,6 +502,7 @@ const messages = {
         },
       },
       promptModal: {
+        apiKeyKeep: "Déjelo en blanco para mantener la clave actual",
         form: {
           name: "Nombre",
           prompt: "Prompt",
@@ -548,6 +554,9 @@ const messages = {
         },
       },
       prompts: {
+        toasts: {
+          deleted: "Prompt eliminado con éxito.",
+        },
         title: "Prompts",
         table: {
           name: "Nombre",
@@ -886,6 +895,9 @@ const messages = {
         },
       },
       queueIntegration: {
+        toasts: {
+          deleted: "Integración eliminada con éxito.",
+        },
         title: "Integraciones",
         table: {
           id: "ID",
@@ -1502,6 +1514,7 @@ const messages = {
         extraInfo: "Otra información",
       },
       fileModal: {
+        fileRequired: "Elija un archivo",
         title: {
           add: "Agregar lista de archivos",
           edit: "Editar lista de archivos",
@@ -1565,6 +1578,12 @@ const messages = {
         },
       },
       backendErrors: {
+        ERR_PROMPT_IN_USE: "No se pudo eliminar: este prompt está en uso en una conexión.",
+        ERR_INTEGRATION_INVALID_URL: "URL inválida. Use una dirección http:// o https://.",
+        ERR_INTEGRATION_URL_NOT_ALLOWED: "Dirección no permitida: la URL no puede apuntar a la red interna del servidor.",
+        ERR_INVALID_FILE_OPTIONS: "Archivos de la lista inválidos.",
+        ERR_WAPP_TOKEN_ALREADY_EXISTS: "Este token ya está en uso en otra conexión.",
+        ERR_NO_FILE_FOUND: "Lista de archivos no encontrada.",
         ERR_LAST_ADMIN: "La empresa necesita al menos un administrador.",
         ERR_CANNOT_DELETE_SELF: "No puede eliminar su propio usuario.",
         ERR_INVALID_PROFILE: "Perfil inválido.",

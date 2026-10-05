@@ -3,6 +3,8 @@
 export type ListAction<T> =
   | { type: "LOAD"; payload: T[] }
   | { type: "UPSERT"; payload: T }
+  // Atualiza só os campos enviados de um item já carregado.
+  | { type: "PATCH"; payload: Partial<T> & { id: number | string } }
   | { type: "DELETE"; payload: number | string }
   | { type: "RESET" };
 
@@ -18,6 +20,8 @@ export const listReducer = <T extends { id: number | string }>(state: T[], actio
       return state.some(item => String(item.id) === String(action.payload.id))
         ? state.map(item => (String(item.id) === String(action.payload.id) ? action.payload : item))
         : [action.payload, ...state];
+    case "PATCH":
+      return state.map(item => (String(item.id) === String(action.payload.id) ? { ...item, ...action.payload } : item));
     case "DELETE":
       return state.filter(item => String(item.id) !== String(action.payload));
     case "RESET":

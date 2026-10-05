@@ -58,6 +58,8 @@ import {
 import typebotListener from "../TypebotServices/typebotListener";
 import QueueIntegrations from "../../models/QueueIntegrations";
 import ShowQueueIntegrationService from "../QueueIntegrationServices/ShowQueueIntegrationService";
+import { assertSafeExternalUrl } from "../../helpers/SafeExternalUrl";
+import Prompt from "../../models/Prompt";
 
 
 const fs = require("fs");
@@ -667,7 +669,10 @@ const handleOpenAi = async (
     "public"
   );
 
-  const openai = getOpenAiClient(prompt.apiKey);
+  // A chave fica fora do escopo padrão do Prompt; só aqui ela é lida.
+  const withKey = await Prompt.scope("withKey").findByPk(prompt.id, { attributes: ["id", "apiKey"] });
+  if (!withKey?.apiKey) return;
+  const openai = getOpenAiClient(withKey.apiKey);
 
   let maxMessages = prompt.maxMessages;
 
@@ -1706,11 +1711,15 @@ export const handleMessageIntegration = async (
     if (queueIntegration?.urlN8N) {
       // Envio em segundo plano, como antes; falhas só são registradas
       // (o throw dentro do callback do request derrubava o processo).
-      axios
-        .post(queueIntegration.urlN8N, msg, {
-          headers: { "Content-Type": "application/json" },
-          timeout: 15000
-        })
+      // A URL é chamada pelo servidor: endereços internos são recusados.
+      assertSafeExternalUrl(queueIntegration.urlN8N)
+        .then(() =>
+          axios.post(queueIntegration.urlN8N, msg, {
+            headers: { "Content-Type": "application/json" },
+            timeout: 15000,
+            maxRedirects: 0
+          })
+        )
         .catch(error => {
           logger.error(`Erro no webhook da integração ${queueIntegration.id}: ${error.message}`);
         });

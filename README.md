@@ -133,7 +133,8 @@ Já migrado:
   e painel do contato (dados, edição e observações);
 - uso diário: Contatos (com importação de planilha e exportação de todos em CSV), Respostas Rápidas,
   Tags, Agendamentos (calendário), Tarefas e Ajuda.
-- configuração: Filas & Chatbot (com horários e opções do chatbot), Usuários e o Perfil no menu da conta.
+- configuração: Filas & Chatbot (com horários e opções do chatbot), Usuários, o Perfil no menu da conta,
+  Conexões (com QR Code), Lista de arquivos, Integrações e Open.Ai.
 As demais telas aparecem no menu e abrem uma página "em migração" com link para a mesma tela no frontend atual.
 
 Diferenças em relação ao frontend atual:
@@ -147,6 +148,11 @@ Diferenças em relação ao frontend atual:
   (também na API);
 - o Perfil (menu da conta) funciona para todos os perfis: cada usuário altera o próprio nome, e-mail e senha
   (`PUT /users/me`); perfil, filas e conexão continuam com o admin.
+- a chave da OpenAI é só de escrita: nunca volta da API (nem em tickets, conexões ou sockets); em branco,
+  a tela mantém a chave atual. O token da conexão (API de mensagens) só aparece para o admin;
+- URLs de integração (n8n, webhook, typebot) não podem apontar para a rede interna do servidor
+  (localhost, IPs privados, metadados da nuvem). Para liberar um host interno de propósito, use
+  `INTEGRATION_ALLOWED_HOSTS` no `.env` do backend (lista separada por vírgula, ex.: `n8n.local,10.0.0.5`).
 
 `.env` (copie de `.env.example`; as variáveis `NEXT_PUBLIC_*` entram no build):
 ```

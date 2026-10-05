@@ -4,18 +4,14 @@ import AppError from "../../errors/AppError";
 import Files from "../../models/Files";
 import FilesOptions from "../../models/FilesOptions";
 import ShowService from "./ShowService";
-
-interface Options {
-  id?: number;
-  name: string;
-  path: string;
-}
+import { FileOptionInput } from "./FileOptionsInput";
+import { removeFileListFile } from "../../helpers/FileListStorage";
 
 interface FileData {
   id?: number;
   name: string;
   message: string;
-  options?: Options[];
+  options?: FileOptionInput[];
 }
 
 interface Request {
@@ -45,28 +41,27 @@ const UpdateService = async ({
   }
 
   if (options) {
-    await Promise.all(
-      options.map(async info => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        await FilesOptions.upsert({ ...info, fileId: file.id });
-      })
-    );
-
-    await Promise.all(
-      file.options.map(async oldInfo => {
-        const stillExists = options.findIndex(info => info.id === oldInfo.id);
-
-        if (stillExists === -1) {
-          await FilesOptions.destroy({ where: { id: oldInfo.id } });
-        }
-      })
-    );
+    const current = new Map(file.options.map(option => [option.id, option]));
+    const kept = new Set<number>();
+    for (const info of options) {
+      if (info.id !== undefined) {
+        const existing = current.get(info.id);
+        // Só opções desta lista podem ser editadas.
+        if (!existing) throw new AppError("ERR_INVALID_FILE_OPTIONS", 400);
+        await existing.update({ name: info.name });
+        kept.add(info.id);
+      } else {
+        await FilesOptions.create({ name: info.name, fileId: file.id, path: "", mediaType: "" });
+      }
+    }
+    for (const old of file.options) {
+      if (!kept.has(old.id)) {
+        removeFileListFile(file.id, old.path);
+        await old.destroy();
+      }
+    }
   }
 
-
-  
-  
   await file.update({
     name,
     message

@@ -1,16 +1,12 @@
 import Files from "../../models/Files";
-import AppError from "../../errors/AppError";
+import { removeFileListFolder } from "../../helpers/FileListStorage";
 
+// Apaga só as listas da empresa (antes, "where: {}" apagava as de todas).
 const DeleteAllService = async (companyId: number): Promise<void> => {
-  await Files.findAll({
-    where: { companyId }
-  });
+  const files = await Files.findAll({ where: { companyId }, attributes: ["id"] });
 
-  if (!Files) {
-    throw new AppError("ERR_NO_RATING_FOUND", 404);
-  }
-
-  await Files.destroy({ where: {} });
+  await Files.destroy({ where: { companyId } });
+  files.forEach(file => removeFileListFolder(file.id));
 };
 
 export default DeleteAllService;

@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
-import { assertRecordInCompany } from "../helpers/CompanyAccess";
 import Files from "../models/Files";
 import { getIO } from "../libs/socket";
 
 import AppError from "../errors/AppError";
-import { head } from "lodash";
+import fs from "fs";
+import { removeFileListFile } from "../helpers/FileListStorage";
+import { parseFileOptions } from "../services/FileServices/FileOptionsInput";
 
 import CreateService from "../services/FileServices/CreateService";
 import ListService from "../services/FileServices/ListService";
@@ -34,18 +35,18 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
 };
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
-  const { name, message, options } = req.body;
+  const { name, message } = req.body;
   const { companyId } = req.user;
 
   const fileList = await CreateService({
     name,
     message,
-    options,
+    options: parseFileOptions(req.body.options),
     companyId
   });
 
   const io = getIO();
-  io.to(`company-${companyId}-mainchannel`).emit(`company${companyId}-file`, {
+  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-file`, {
     action: "create",
     fileList
   });
@@ -62,53 +63,52 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
   return res.status(200).json(file);
 };
 
+// A lista já foi conferida antes do multer (rota). Cada arquivo vai para a
+// opção indicada pelo id, que precisa ser desta lista.
 export const uploadMedias = async (req: Request, res: Response): Promise<Response> => {
-  const { fileId, id, mediaType } = req.body;
-  const files = req.files as Express.Multer.File[];
-  await assertRecordInCompany(Files, fileId, req.user);
+  const { fileListId } = req.params;
+  const { companyId } = req.user;
+  const files = (req.files as Express.Multer.File[]) || [];
+  const ids = ([] as unknown[]).concat(req.body.id ?? []);
+  const mediaTypes = ([] as unknown[]).concat(req.body.mediaType ?? []);
 
-  try {
-    
-    let fileOpt
-    if (files.length > 0) {
+  const discard = (from: number) => files.slice(from).forEach(file => fs.rmSync(file.path, { force: true }));
 
-      for (const [index, file] of files.entries()) {
-        fileOpt = await FilesOptions.findOne({
-          where: {
-            fileId,
-            id: Array.isArray(id)? id[index] : id
-          }
-        });
-
-        fileOpt.update({
-          path: file.filename.replace('/','-'),
-          mediaType: Array.isArray(mediaType)? mediaType[index] : mediaType
-        }) ;
-      }
+  for (const [index, file] of files.entries()) {
+    const option = await FilesOptions.findOne({ where: { id: Number(ids[index]), fileId: Number(fileListId) } });
+    if (!option) {
+      discard(index);
+      throw new AppError("ERR_INVALID_FILE_OPTIONS", 400);
     }
-    
-    return res.send({ mensagem: "Arquivos atualizados" });
-  } catch (err: any) {
-    throw new AppError(err.message);
+    if (option.path && option.path !== file.filename) removeFileListFile(fileListId, option.path);
+    await option.update({
+      path: file.filename,
+      mediaType: String(mediaTypes[index] ?? file.mimetype ?? "")
+    });
   }
+
+  const fileList = await ShowService(fileListId, companyId);
+  const io = getIO();
+  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-file`, {
+    action: "update",
+    fileList
+  });
+
+  return res.status(200).json(fileList);
 };
 
 export const update = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  if (req.user.profile !== "admin") {
-    throw new AppError("ERR_NO_PERMISSION", 403);
-  }
-
   const { fileId } = req.params;
-  const fileData = req.body;
+  const fileData = { ...req.body, options: parseFileOptions(req.body.options) };
   const { companyId } = req.user;
 
   const fileList = await UpdateService({ fileData, id: fileId, companyId });
 
   const io = getIO();
-  io.to(`company-${companyId}-mainchannel`).emit(`company${companyId}-file`, {
+  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-file`, {
     action: "update",
     fileList
   });
@@ -127,7 +127,7 @@ export const remove = async (
   await DeleteService(fileId, companyId);
 
   const io = getIO();
-  io.to(`company-${companyId}-mainchannel`).emit(`company${companyId}-file`, {
+  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-file`, {
     action: "delete",
     fileId
   });
@@ -141,6 +141,9 @@ export const removeAll = async (
 ): Promise<Response> => {
   const { companyId } = req.user;
   await DeleteAllService(companyId);
+
+  const io = getIO();
+  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-file`, { action: "reset" });
 
   return res.send();
 };
