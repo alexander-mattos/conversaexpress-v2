@@ -193,6 +193,9 @@ const messages = {
         },
         open: "Em aberto",
         seeTicket: "Ver Ticket",
+        ticketNumber: "Ticket nº {{id}}",
+        empty: "Nenhum ticket",
+        noTags: "Crie tags com a opção Kanban ativada para ter mais colunas.",
       },
       invoices: {
         title: "Faturas",
@@ -1703,6 +1706,10 @@ const messages = {
         ERR_USER_CREATION_DISABLED:
             "A criação do usuário foi desabilitada pelo administrador.",
         ERR_NO_PERMISSION: "Você não tem permissão para acessar este recurso.",
+        ERR_PLAN_FEATURE_DISABLED: "Este recurso não está liberado no plano da empresa.",
+        ERR_TAG_NOT_KANBAN: "Esta tag não é uma coluna do Kanban.",
+        ERR_INVALID_TAG: "Tag inválida.",
+        ERR_INVALID_FILTER: "Filtro inválido.",
         ERR_DUPLICATED_CONTACT: "Já existe um contato com este número.",
         ERR_NO_SETTING_FOUND: "Nenhuma configuração encontrada com este ID.",
         ERR_NO_CONTACT_FOUND: "Nenhum contato encontrado com este ID.",

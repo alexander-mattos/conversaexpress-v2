@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { assertCompanyAccess } from "../helpers/CompanyAccess";
+import { assertPlanFeature, parseIdList } from "../helpers/KanbanAccess";
 import { getIO, queueRoom } from "../libs/socket";
 import AppError from "../errors/AppError";
 import Ticket from "../models/Ticket";
@@ -110,53 +111,22 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 };
 
 export const kanban = async (req: Request, res: Response): Promise<Response> => {
-  const {
-    pageNumber,
-    status,
-    date,
-    updatedAt,
-    searchParam,
-    showAll,
-    queueIds: queueIdsStringified,
-    tags: tagIdsStringified,
-    users: userIdsStringified,
-    withUnreadMessages
-  } = req.query as IndexQuery;
+  const { date, updatedAt, searchParam, showAll, withUnreadMessages } = req.query as IndexQuery;
+  const { companyId, id, profile } = req.user;
 
-
-  const userId = req.user.id;
-  const { companyId } = req.user;
-
-  let queueIds: number[] = [];
-  let tagsIds: number[] = [];
-  let usersIds: number[] = [];
-
-  if (queueIdsStringified) {
-    queueIds = JSON.parse(queueIdsStringified);
-  }
-
-  if (tagIdsStringified) {
-    tagsIds = JSON.parse(tagIdsStringified);
-  }
-
-  if (userIdsStringified) {
-    usersIds = JSON.parse(userIdsStringified);
-  }
+  await assertPlanFeature(companyId, "useKanban");
 
   const { tickets, count, hasMore } = await ListTicketsServiceKanban({
+    user: { id, profile },
+    companyId,
     searchParam,
-    tags: tagsIds,
-    users: usersIds,
-    pageNumber,
-    status,
     date,
     updatedAt,
     showAll,
-    userId,
-    queueIds,
     withUnreadMessages,
-    companyId
-
+    queueIds: parseIdList(req.query.queueIds),
+    tags: parseIdList(req.query.tags),
+    users: parseIdList(req.query.users)
   });
 
   return res.status(200).json({ tickets, count, hasMore });
