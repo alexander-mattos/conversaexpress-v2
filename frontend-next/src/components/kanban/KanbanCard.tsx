@@ -44,7 +44,7 @@ export function KanbanCardContent({ ticket, onOpen, overlay }: Props) {
         onPointerDown={event => event.stopPropagation()}
         onKeyDown={event => event.stopPropagation()}
         onClick={() => onOpen(ticket.uuid)}
-        sx={{ bgcolor: "#10a110", fontWeight: "bold", "&:hover": { bgcolor: "#0d8a0d" } }}
+        sx={{ bgcolor: "#10a110", color: "#fff", fontWeight: "bold", "&:hover": { bgcolor: "#0d8a0d" } }}
       >
         {t("kanban.seeTicket")}
       </Button>
