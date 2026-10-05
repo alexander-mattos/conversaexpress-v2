@@ -1242,6 +1242,7 @@ const messages = {
       },
       helps: {
         title: "Centro de Ayuda",
+        empty: "No hay videos de ayuda.",
       },
       schedules: {
         title: "Programaciones",

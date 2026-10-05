@@ -10,6 +10,9 @@ import UpdateService from "../services/ScheduleServices/UpdateService";
 import ShowService from "../services/ScheduleServices/ShowService";
 import DeleteService from "../services/ScheduleServices/DeleteService";
 import Schedule from "../models/Schedule";
+import Contact from "../models/Contact";
+import Ticket from "../models/Ticket";
+import User from "../models/User";
 import path from "path";
 import fs from "fs";
 import { head } from "lodash";
@@ -19,6 +22,17 @@ type IndexQuery = {
   contactId?: number | string;
   userId?: number | string;
   pageNumber?: string | number;
+};
+
+// contactId, userId e ticketId vêm do corpo: precisam ser da mesma empresa
+// (antes dava para agendar mensagem para contato de outra empresa).
+const assertScheduleRefs = async (
+  data: { contactId?: unknown; userId?: unknown; ticketId?: unknown },
+  requestUser: Request["user"]
+): Promise<void> => {
+  if (data.contactId) await assertRecordInCompany(Contact, data.contactId, requestUser);
+  if (data.userId) await assertRecordInCompany(User, data.userId, requestUser);
+  if (data.ticketId) await assertRecordInCompany(Ticket, data.ticketId, requestUser);
 };
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
@@ -44,6 +58,8 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     userId
   } = req.body;
   const { companyId } = req.user;
+
+  await assertScheduleRefs({ contactId, userId }, req.user);
 
   const schedule = await CreateService({
     body,
@@ -82,6 +98,8 @@ export const update = async (
   const { scheduleId } = req.params;
   const scheduleData = req.body;
   const { companyId } = req.user;
+
+  await assertScheduleRefs(scheduleData, req.user);
 
   const schedule = await UpdateService({ scheduleData, id: scheduleId, companyId });
 

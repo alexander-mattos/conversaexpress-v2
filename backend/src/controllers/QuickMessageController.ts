@@ -30,14 +30,11 @@ type StoreData = {
   userId: number | number;
 };
 
-type FindParams = {
-  userId: string;
-};
-
 export const index = async (req: Request, res: Response): Promise<Response> => {
-  const { searchParam, pageNumber, userId } = req.query as IndexQuery;
-  const { companyId } = req.user;
+  const { searchParam, pageNumber } = req.query as IndexQuery;
+  const { companyId, id: userId } = req.user;
 
+  // Cada atendente lista as próprias respostas rápidas (o userId vinha da URL).
   const { records, count, hasMore } = await ListService({
     searchParam,
     pageNumber,
@@ -146,12 +143,11 @@ export const findList = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const { userId } = req.query as FindParams;
-  // A empresa vem sempre do token: o companyId da URL permitia ler as
-  // respostas rápidas de outra empresa.
+  // Empresa e usuário vêm sempre do token: a URL permitia ler as respostas
+  // rápidas de outra empresa ou de colegas.
   const records: QuickMessage[] = await FindService({
     companyId: String(req.user.companyId),
-    userId
+    userId: String(req.user.id)
   });
 
   return res.status(200).json(records);

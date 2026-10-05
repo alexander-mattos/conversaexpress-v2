@@ -102,7 +102,11 @@ export default function ScheduleModal({
       try {
         const { data } = await api.get<ContactOption[]>("/contacts/list", { params: { companyId: user.companyId } });
         if (active) setContacts([EMPTY_CONTACT, ...data.map(c => ({ id: c.id, name: c.name }))]);
-        if (!scheduleId) return;
+        if (!scheduleId) {
+          // Novo agendamento: parte do contato recebido (ou de nenhum).
+          if (active) reset(defaults);
+          return;
+        }
         const { data: loaded } = await api.get<ScheduleData>(`/schedules/${scheduleId}`);
         if (!active) return;
         setSchedule(loaded);
@@ -114,7 +118,7 @@ export default function ScheduleModal({
     return () => {
       active = false;
     };
-  }, [open, scheduleId, user, reset]);
+  }, [open, scheduleId, user, reset, defaults]);
 
   const handleClose = () => {
     onClose();

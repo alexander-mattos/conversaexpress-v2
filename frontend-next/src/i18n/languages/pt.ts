@@ -1302,6 +1302,7 @@ const messages = {
       },
       helps: {
         title: "Central de Ajuda",
+        empty: "Nenhum vídeo de ajuda cadastrado.",
       },
       schedules: {
         title: "Agendamentos",

@@ -1,13 +1,21 @@
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import isAuth from "../middleware/isAuth";
 
 import * as QuickMessageController from "../controllers/QuickMessageController";
 import multer from "multer";
 import uploadConfig from "../config/upload";
+import { assertRecordInCompany } from "../helpers/CompanyAccess";
+import QuickMessage from "../models/QuickMessage";
 
 const upload = multer(uploadConfig);
 
 const routes = express.Router();
+
+// Confere a empresa ANTES do multer gravar o arquivo em disco.
+const quickMessageInCompany = async (req: Request, res: Response, next: NextFunction) => {
+  await assertRecordInCompany(QuickMessage, req.params.id, req.user);
+  next();
+};
 
 routes.get("/quick-messages/list", isAuth, QuickMessageController.findList);
 
@@ -24,6 +32,7 @@ routes.delete("/quick-messages/:id", isAuth, QuickMessageController.remove);
 routes.post(
     "/quick-messages/:id/media-upload",
     isAuth,
+    quickMessageInCompany,
     upload.array("file"),
     QuickMessageController.mediaUpload
   );

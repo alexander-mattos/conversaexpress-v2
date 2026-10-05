@@ -26,7 +26,7 @@ import { api } from "@/lib/api";
 import { toastError } from "@/lib/toastError";
 import type { Ticket } from "@/lib/tickets/types";
 
-interface ContactOption {
+export interface ContactOption {
   id?: number;
   name: string;
   number?: string;
@@ -44,13 +44,27 @@ const optionLabel = (option: ContactOption | string) =>
   typeof option === "string" ? option : option.number ? `${option.name} - ${option.number}` : option.name;
 
 // Porta de frontend/src/components/NewTicketModal.
-export default function NewTicketModal({ open, onClose }: { open: boolean; onClose: (ticket?: Ticket) => void }) {
+// initialContact: aberto a partir da lista de contatos, sem a busca de contato.
+export default function NewTicketModal({
+  open,
+  onClose,
+  initialContact
+}: {
+  open: boolean;
+  onClose: (ticket?: Ticket) => void;
+  initialContact?: ContactOption | null;
+}) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [options, setOptions] = useState<ContactOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchParam, setSearchParam] = useState("");
-  const [selectedContact, setSelectedContact] = useState<ContactOption | null>(null);
+  const [selectedContact, setSelectedContact] = useState<ContactOption | null>(initialContact ?? null);
+  const [lastInitial, setLastInitial] = useState(initialContact);
+  if (initialContact !== lastInitial) {
+    setLastInitial(initialContact);
+    setSelectedContact(initialContact ?? null);
+  }
   const [selectedQueue, setSelectedQueue] = useState<number | "">("");
   const [selectedWhatsapp, setSelectedWhatsapp] = useState<number | "">(user?.whatsappId ?? "");
   const [whatsapps, setWhatsapps] = useState<WhatsappOption[]>([]);
@@ -105,7 +119,7 @@ export default function NewTicketModal({ open, onClose }: { open: boolean; onClo
   const handleClose = () => {
     onClose();
     setSearchParam("");
-    setSelectedContact(null);
+    setSelectedContact(initialContact ?? null);
   };
 
   const handleSaveTicket = async (contactId?: number) => {
@@ -152,6 +166,7 @@ export default function NewTicketModal({ open, onClose }: { open: boolean; onClo
         <DialogTitle>{t("newTicketModal.title")}</DialogTitle>
         <DialogContent dividers>
           <Grid container spacing={2} sx={{ width: 300 }}>
+            {!initialContact?.id && (
             <Grid size={12}>
               <Autocomplete<ContactOption, false, false, true>
                 fullWidth
@@ -210,6 +225,7 @@ export default function NewTicketModal({ open, onClose }: { open: boolean; onClo
                 )}
               />
             </Grid>
+            )}
             <Grid size={12}>
               <Select
                 required

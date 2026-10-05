@@ -82,10 +82,10 @@ export default {
       const { typeArch } = req.body;
       const safeName = sanitizeFileName(file.originalname);
 
-      const fileName =
-        typeArch && typeArch !== "announcements"
-          ? safeName
-          : `${new Date().getTime()}_${safeName}`;
+      // fileList fica numa pasta própria por lista. Os demais vão com
+      // timestamp para um envio não sobrescrever o arquivo de outro registro
+      // (ou de outra empresa) que tenha o mesmo nome.
+      const fileName = typeArch === "fileList" ? safeName : `${new Date().getTime()}_${safeName}`;
       return cb(null, fileName);
     }
   })
