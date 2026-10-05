@@ -1,3 +1,7 @@
+// Módulo próprio: sem isto, as constantes de arquivos de teste diferentes
+// colidem na checagem de tipos do ts-jest (TS2451).
+export {};
+
 describe("config/auth", () => {
   const env = { ...process.env };
   afterEach(() => {

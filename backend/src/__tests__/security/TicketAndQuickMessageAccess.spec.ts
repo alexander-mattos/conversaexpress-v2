@@ -1,3 +1,7 @@
+// Módulo próprio: sem isto, as constantes de arquivos de teste diferentes
+// colidem na checagem de tipos do ts-jest (TS2451).
+export {};
+
 const findService = jest.fn();
 const showTicketService = jest.fn();
 const deleteTicketService = jest.fn();
