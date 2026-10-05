@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -63,6 +63,16 @@ export default function QuickMessageDialog({
     setValue,
     formState: { errors, isSubmitting }
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { shortcode: "", message: "" } });
+  // Remonta os campos depois de carregar o registro: sem isso, o rótulo podia
+  // ficar por cima do valor quando os dados chegavam com o diálogo já aberto.
+  const [formKey, setFormKey] = useState(0);
+  const loadValues = useCallback(
+    (values: Parameters<typeof reset>[0]) => {
+      reset(values);
+      setFormKey(key => key + 1);
+    },
+    [reset]
+  );
 
   useEffect(() => {
     if (!open || !quickMessageId) return;
@@ -70,10 +80,10 @@ export default function QuickMessageDialog({
       .get<QuickMessageData>(`/quick-messages/${quickMessageId}`)
       .then(({ data }) => {
         setRecord(data);
-        reset({ shortcode: data.shortcode ?? "", message: data.message ?? "" });
+        loadValues({ shortcode: data.shortcode ?? "", message: data.message ?? "" });
       })
       .catch(toastError);
-  }, [open, quickMessageId, reset]);
+  }, [open, quickMessageId, reset, loadValues]);
 
   const handleClose = () => {
     reset({ shortcode: "", message: "" });
@@ -156,7 +166,7 @@ export default function QuickMessageDialog({
           onChange={(e: ChangeEvent<HTMLInputElement>) => e.target.files?.[0] && setAttachment(e.target.files[0])}
         />
         <Box component="form" noValidate onSubmit={handleSubmit(onSubmit)}>
-          <DialogContent dividers>
+          <DialogContent dividers key={formKey}>
             <Grid container spacing={2}>
               <Grid size={12}>
                 <TextField

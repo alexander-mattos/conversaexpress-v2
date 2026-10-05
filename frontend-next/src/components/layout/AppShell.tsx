@@ -33,6 +33,7 @@ import logo from "@/assets/logo.png";
 import MainMenu from "./MainMenu";
 import NotificationsPopOver from "./NotificationsPopOver";
 import NotificationsVolume from "./NotificationsVolume";
+import UserModal from "@/components/users/UserModal";
 
 const DRAWER_WIDTH = 240;
 const USER_STATUS_INTERVAL = 1000 * 60 * 5;
@@ -59,6 +60,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(() => document.body.offsetWidth > 1200);
   const [accountAnchor, setAccountAnchor] = useState<HTMLElement | null>(null);
   const [volume, setVolume] = useState(readVolume);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   // Login em outro computador derruba esta sessão; "userStatus" mantém o
   // usuário como online (a cada 5 minutos, como hoje).
@@ -236,6 +238,14 @@ export default function AppShell({ children }: { children: ReactNode }) {
             <MenuItem
               onClick={() => {
                 setAccountAnchor(null);
+                setProfileOpen(true);
+              }}
+            >
+              {t("mainDrawer.appBar.user.profile")}
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                setAccountAnchor(null);
                 handleLogout();
               }}
             >
@@ -244,6 +254,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
           </Menu>
         </Toolbar>
       </AppBar>
+
+      <UserModal open={profileOpen} onClose={() => setProfileOpen(false)} userId={user.id} me />
 
       <Box component="main" sx={{ flex: 1, overflow: "auto" }}>
         <Box sx={{ minHeight: 48 }} />

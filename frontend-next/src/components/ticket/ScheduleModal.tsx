@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -94,6 +94,16 @@ export default function ScheduleModal({
     setValue,
     formState: { errors, isSubmitting }
   } = useForm<{ body: string; contactId: number | ""; sendAt: string }>({ resolver: zodResolver(schema), defaultValues: defaults });
+  // Remonta os campos depois de carregar o registro: sem isso, o rótulo podia
+  // ficar por cima do valor quando os dados chegavam com o diálogo já aberto.
+  const [formKey, setFormKey] = useState(0);
+  const loadValues = useCallback(
+    (values: Parameters<typeof reset>[0]) => {
+      reset(values);
+      setFormKey(key => key + 1);
+    },
+    [reset]
+  );
 
   useEffect(() => {
     if (!open || !user) return;
@@ -110,7 +120,7 @@ export default function ScheduleModal({
         const { data: loaded } = await api.get<ScheduleData>(`/schedules/${scheduleId}`);
         if (!active) return;
         setSchedule(loaded);
-        reset({ body: loaded.body, contactId: loaded.contactId, sendAt: format(new Date(loaded.sendAt), DATETIME) });
+        loadValues({ body: loaded.body, contactId: loaded.contactId, sendAt: format(new Date(loaded.sendAt), DATETIME) });
       } catch (err) {
         toastError(err);
       }
@@ -118,7 +128,7 @@ export default function ScheduleModal({
     return () => {
       active = false;
     };
-  }, [open, scheduleId, user, reset, defaults]);
+  }, [open, scheduleId, user, reset, defaults, loadValues]);
 
   const handleClose = () => {
     onClose();
@@ -193,7 +203,7 @@ export default function ScheduleModal({
           onChange={(e: ChangeEvent<HTMLInputElement>) => setAttachment(e.target.files?.[0] ?? null)}
         />
         <Box component="form" noValidate onSubmit={handleSubmit(onSubmit)}>
-          <DialogContent dividers>
+          <DialogContent dividers key={formKey}>
             <Controller
               name="contactId"
               control={control}

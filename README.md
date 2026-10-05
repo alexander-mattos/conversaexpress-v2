@@ -133,6 +133,7 @@ Já migrado:
   e painel do contato (dados, edição e observações);
 - uso diário: Contatos (com importação de planilha e exportação de todos em CSV), Respostas Rápidas,
   Tags, Agendamentos (calendário), Tarefas e Ajuda.
+- configuração: Filas & Chatbot (com horários e opções do chatbot), Usuários e o Perfil no menu da conta.
 As demais telas aparecem no menu e abrem uma página "em migração" com link para a mesma tela no frontend atual.
 
 Diferenças em relação ao frontend atual:
@@ -142,6 +143,10 @@ Diferenças em relação ao frontend atual:
 - as Tarefas ficam no navegador por usuário (`tasks:<empresa>:<usuário>`); a lista antiga (`tasks`, compartilhada
   por todos do computador) passa uma vez para o primeiro usuário que abrir a tela;
 - excluir contatos e importar contatos (planilha ou telefone) passam a ser só para admin, também na API.
+- criar, editar e excluir filas e opções do chatbot, e trocar o idioma da empresa, passam a ser só para admin
+  (também na API);
+- o Perfil (menu da conta) funciona para todos os perfis: cada usuário altera o próprio nome, e-mail e senha
+  (`PUT /users/me`); perfil, filas e conexão continuam com o admin.
 
 `.env` (copie de `.env.example`; as variáveis `NEXT_PUBLIC_*` entram no build):
 ```

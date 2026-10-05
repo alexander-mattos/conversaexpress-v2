@@ -65,3 +65,18 @@ export const assertRecordInCompany = async (
   if (!record) return;
   await assertCompanyAccess(record.get("companyId") as number, requestUser);
 };
+
+// Como assertRecordInCompany, mas exige que o registro exista: usado quando o
+// id vem do corpo da requisição e será gravado em outro registro (um id
+// inexistente não pode passar adiante como "permitido").
+export const assertExistsInCompany = async (
+  model: ModelCtor,
+  id: unknown,
+  requestUser: RequestUser
+): Promise<void> => {
+  const record = await model.findByPk(id as string, {
+    attributes: ["id", "companyId"]
+  });
+  if (!record) throw new AppError("ERR_NOT_FOUND", 404);
+  await assertCompanyAccess(record.get("companyId") as number, requestUser);
+};

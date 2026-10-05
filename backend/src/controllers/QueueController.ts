@@ -1,12 +1,27 @@
 import { Request, Response } from "express";
-import { resolveCompanyId } from "../helpers/CompanyAccess";
+import { assertExistsInCompany, resolveCompanyId } from "../helpers/CompanyAccess";
+import { parseQueueSchedules } from "../helpers/QueueSchedules";
+import Prompt from "../models/Prompt";
+import QueueIntegrations from "../models/QueueIntegrations";
 import { getIO } from "../libs/socket";
 import CreateQueueService from "../services/QueueService/CreateQueueService";
 import DeleteQueueService from "../services/QueueService/DeleteQueueService";
 import ListQueuesService from "../services/QueueService/ListQueuesService";
 import ShowQueueService from "../services/QueueService/ShowQueueService";
 import UpdateQueueService from "../services/QueueService/UpdateQueueService";
-import { isNil } from "lodash";
+
+// "" (campo limpo na tela) vira null; ausente continua ausente.
+const emptyToNull = (value: unknown) => (value === "" ? null : value);
+
+// Integração e prompt vinculados à fila precisam ser da mesma empresa.
+const assertQueueRefs = async (
+  integrationId: unknown,
+  promptId: unknown,
+  req: Request
+): Promise<void> => {
+  if (integrationId) await assertExistsInCompany(QueueIntegrations, integrationId, req.user);
+  if (promptId) await assertExistsInCompany(Prompt, promptId, req.user);
+};
 
 type QueueFilter = {
   companyId: number;
@@ -26,17 +41,17 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   const { name, color, greetingMessage, outOfHoursMessage, schedules, orderQueue, integrationId, promptId } =
     req.body;
   const { companyId } = req.user;
-  console.log("queue", integrationId, promptId)
+  await assertQueueRefs(integrationId, promptId, req);
   const queue = await CreateQueueService({
     name,
     color,
     greetingMessage,
     companyId,
     outOfHoursMessage,
-    schedules,
-    orderQueue: orderQueue === "" ? null : orderQueue,
-    integrationId: integrationId === "" ? null : integrationId,
-    promptId: promptId === "" ? null : promptId
+    schedules: parseQueueSchedules(schedules),
+    orderQueue: emptyToNull(orderQueue) as number,
+    integrationId: emptyToNull(integrationId) as number,
+    promptId: emptyToNull(promptId) as number
   });
 
   const io = getIO();
@@ -65,15 +80,16 @@ export const update = async (
   const { companyId } = req.user;
   const { name, color, greetingMessage, outOfHoursMessage, schedules, orderQueue, integrationId, promptId } =
     req.body;
+  await assertQueueRefs(integrationId, promptId, req);
   const queue = await UpdateQueueService(queueId, {
     name,
     color,
     greetingMessage,
     outOfHoursMessage,
-    schedules,
-    orderQueue: orderQueue === "" ? null : orderQueue,
-    integrationId: integrationId === "" ? null : integrationId,
-    promptId: promptId === "" ? null : promptId
+    schedules: parseQueueSchedules(schedules),
+    orderQueue: emptyToNull(orderQueue) as number,
+    integrationId: emptyToNull(integrationId) as number,
+    promptId: emptyToNull(promptId) as number
   }, companyId);
 
   const io = getIO();

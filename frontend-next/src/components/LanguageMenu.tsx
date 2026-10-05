@@ -5,16 +5,19 @@ import { FormControlLabel, IconButton, Menu, MenuItem, Radio, RadioGroup } from 
 import LanguageOutlined from "@mui/icons-material/LanguageOutlined";
 import { useTranslation } from "react-i18next";
 import { changeLanguage, type Language } from "@/i18n";
+import { useAuth } from "@/contexts/AuthContext";
 import { api, getAccessToken } from "@/lib/api";
 
 // Seletor de idioma (equivalente ao LanguageControl do frontend atual).
 export default function LanguageMenu() {
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 
   const handleChange = async (language: Language) => {
     changeLanguage(language);
-    if (getAccessToken()) {
+    // O idioma da empresa (mensagens do backend) só o admin altera.
+    if (getAccessToken() && user?.profile === "admin") {
       try {
         await api.post(`/users/set-language/${language}`);
       } catch {
