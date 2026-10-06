@@ -12,6 +12,7 @@ const ticketTagFindOrCreate = jest.fn();
 const ticketTagFindAll = jest.fn();
 const userQueueFindAll = jest.fn();
 const companyFindByPk = jest.fn();
+const userFindByPk = jest.fn();
 const showTicket = jest.fn();
 const emits: { rooms: string[]; event: string; payload: any }[] = [];
 
@@ -43,7 +44,8 @@ jest.mock("../../models/TicketTag", () => ({
 jest.mock("../../models/UserQueue", () => ({ __esModule: true, default: { findAll: userQueueFindAll } }));
 jest.mock("../../models/Company", () => ({ __esModule: true, default: { findByPk: companyFindByPk } }));
 jest.mock("../../models/Plan", () => ({ __esModule: true, default: {} }));
-for (const model of ["Contact", "Queue", "User", "Whatsapp"]) {
+jest.mock("../../models/User", () => ({ __esModule: true, default: { findByPk: userFindByPk } }));
+for (const model of ["Contact", "Queue", "Whatsapp"]) {
   jest.doMock(`../../models/${model}`, () => ({ __esModule: true, default: {} }));
 }
 jest.mock("../../services/TicketServices/ShowTicketService", () => ({ __esModule: true, default: showTicket }));
@@ -69,6 +71,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   emits.length = 0;
   companyFindByPk.mockResolvedValue({ plan: { useKanban: true } });
+  userFindByPk.mockResolvedValue({ id: 1, super: false });
   userQueueFindAll.mockResolvedValue([{ queueId: 3 }]);
   tagFindAll.mockResolvedValue([{ id: 20 }, { id: 21 }]);
   showTicket.mockResolvedValue({ id: 50, status: "pending", queueId: 3, userId: null, tags: [] });
@@ -109,6 +112,15 @@ describe("kanban: mover ticket de coluna", () => {
     companyFindByPk.mockResolvedValue({ plan: { useKanban: false } });
     await expect(move(admin, "50", 20)).rejects.toMatchObject({ statusCode: 403 });
     expect(ticketFindOne).not.toHaveBeenCalled();
+  });
+
+  it("super acessa o Kanban mesmo com o plano sem o recurso", async () => {
+    companyFindByPk.mockResolvedValue({ plan: { useKanban: false } });
+    userFindByPk.mockResolvedValue({ id: 1, super: true });
+    ticketFindOne.mockResolvedValue({ id: 50, status: "pending", queueId: 3, userId: null });
+    tagFindByPk.mockResolvedValue({ id: 20, companyId: 7, kanban: 1 });
+    await move(admin, "50", 20);
+    expect(ticketTagCreate).toHaveBeenCalledWith({ ticketId: 50, tagId: 20 }, { transaction: "tx" });
   });
 
   it("troca só as tags de kanban, mantém as comuns e avisa ao vivo", async () => {

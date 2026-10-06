@@ -3,6 +3,7 @@ import AppError from "../errors/AppError";
 import Company from "../models/Company";
 import Plan from "../models/Plan";
 import UserQueue from "../models/UserQueue";
+import { isSuperUser } from "./CompanyAccess";
 
 type PlanFeature =
   | "useKanban"
@@ -27,7 +28,9 @@ interface VisibleTicket {
 
 // O recurso precisa estar liberado no plano da empresa (antes a tela só
 // escondia o menu e a API respondia normalmente).
-export const assertPlanFeature = async (companyId: number, feature: PlanFeature): Promise<void> => {
+// Com userId, o super passa sempre (acessa todos os recursos, qualquer plano).
+export const assertPlanFeature = async (companyId: number, feature: PlanFeature, userId?: string | number): Promise<void> => {
+  if (userId !== undefined && (await isSuperUser(userId))) return;
   const company = await Company.findByPk(companyId, {
     attributes: ["id"],
     include: [{ model: Plan, as: "plan", attributes: [feature] }]
