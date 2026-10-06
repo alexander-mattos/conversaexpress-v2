@@ -10,13 +10,14 @@ import { usePlanFlagsState, type PlanFlags } from "./useMenuStatus";
 
 // Telas de admin liberadas pelo plano (Open.Ai, Integrações): como no
 // frontend atual, sem o recurso no plano volta para o início. Também exige
-// admin, igual ao menu (e à API).
-export const usePlanGuard = (flag: keyof PlanFlags): boolean => {
+// admin, igual ao menu (e à API), menos onde o menu mostra para todos
+// (Kanban: adminOnly false).
+export const usePlanGuard = (flag: keyof PlanFlags, { adminOnly = true }: { adminOnly?: boolean } = {}): boolean => {
   const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
   const { flags, loaded } = usePlanFlagsState(user);
-  const allowed = loaded && flags[flag] && can(user?.profile, "drawer-admin-items:view");
+  const allowed = loaded && flags[flag] && (!adminOnly || can(user?.profile, "drawer-admin-items:view"));
 
   useEffect(() => {
     if (loaded && !allowed) {

@@ -135,7 +135,7 @@ Já migrado:
   Tags, Agendamentos (calendário), Tarefas e Ajuda.
 - configuração: Filas & Chatbot (com horários e opções do chatbot), Usuários, o Perfil no menu da conta,
   Conexões (com QR Code), Lista de arquivos, Integrações e Open.Ai.
-- colaboração: Chat Interno (com o popover do topo) e Informativos (com o popover do topo).
+- colaboração: Chat Interno (com o popover do topo), Informativos (com o popover do topo) e Kanban.
 As demais telas aparecem no menu e abrem uma página "em migração" com link para a mesma tela no frontend atual.
 
 Diferenças em relação ao frontend atual:
@@ -158,6 +158,10 @@ Diferenças em relação ao frontend atual:
   participantes leem e postam, e só o dono edita ou apaga o chat;
 - os Informativos inativos só aparecem para o super admin; a mídia do informativo aceita só imagem
   (png, jpg, jpeg, webp) e o "lido" do popover fica no navegador por usuário.
+- Kanban: cada ticket fica em uma só coluna (a primeira tag de kanban; sem tag de kanban, "Em aberto",
+  mesmo com tags comuns). Mover troca só a tag de kanban (`PUT /ticket-tags/:ticketId/kanban`) e mantém
+  as comuns. O atendente vê só os tickets dele e os pendentes das filas dele (`showAll` vale só para admin),
+  só move esses tickets, e a tela e a API exigem o Kanban no plano.
 
 `.env` (copie de `.env.example`; as variáveis `NEXT_PUBLIC_*` entram no build):
 ```
