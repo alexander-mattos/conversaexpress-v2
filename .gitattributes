@@ -1,2 +1,23 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Sempre LF, mesmo em clones no Windows (core.autocrlf=true): estes arquivos
+# rodam ou são lidos no Linux (containers e instalador), onde o CRLF quebra.
+*.sh                      text eol=lf
+instalador/install_*      text eol=lf
+Dockerfile                text eol=lf
+**/Dockerfile             text eol=lf
+Caddyfile                 text eol=lf
+docker-compose*.yml       text eol=lf
+*.env.example             text eol=lf
+.env.example              text eol=lf
+.env.docker.example       text eol=lf
+
+# Binários
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.ico  binary
+*.mp3  binary
+*.ogg  binary
+*.xlsx binary
