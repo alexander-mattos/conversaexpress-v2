@@ -1,10 +1,14 @@
 import { Op } from "sequelize";
+import AppError from "../../errors/AppError";
 import Campaign from "../../models/Campaign";
 import CampaignShipping from "../../models/CampaignShipping";
 import { campaignQueue } from "../../queues";
+import { canCancelCampaign } from "../../helpers/CampaignAccess";
 
-export async function CancelService(id: number) {
-  const campaign = await Campaign.findByPk(id);
+export async function CancelService(id: number, companyId: number) {
+  const campaign = await Campaign.findOne({ where: { id, companyId } });
+  if (!campaign) throw new AppError("ERR_NO_CAMPAIGN_FOUND", 404);
+  if (!canCancelCampaign(campaign.status)) throw new AppError("ERR_CAMPAIGN_CANNOT_CANCEL", 400);
   await campaign.update({ status: "CANCELADA" });
 
   const recordsToCancel = await CampaignShipping.findAll({
@@ -24,4 +28,5 @@ export async function CancelService(id: number) {
   }
 
   await Promise.all(promises);
+  return campaign;
 }

@@ -2,6 +2,7 @@ node_modules
 public/*
 dist
 !public/.gitkeep
+private/
 .env
 .env.test
 

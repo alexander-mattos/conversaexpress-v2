@@ -1,5 +1,7 @@
 import * as Yup from "yup";
-import { assertRecordInCompany } from "../helpers/CompanyAccess";
+import { assertRecordInCompany, resolveCompanyId } from "../helpers/CompanyAccess";
+import { assertIdInCompany } from "../helpers/CampaignAccess";
+import ContactList from "../models/ContactList";
 import { Request, Response } from "express";
 import { getIO } from "../libs/socket";
 
@@ -29,10 +31,6 @@ type StoreData = {
   email?: string;
 };
 
-type FindParams = {
-  companyId: number;
-  contactListId: number;
-};
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
   const { searchParam, pageNumber, contactListId } = req.query as IndexQuery;
@@ -62,8 +60,18 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     throw new AppError(err.message);
   }
 
+  // A lista precisa ser da empresa, e só nome, número e e-mail vêm do corpo
+  // (antes dava para pôr contatos na lista de outra empresa e marcar
+  // isWhatsappValid à mão).
+  const contactListId = Number(data.contactListId);
+  if (!Number.isInteger(contactListId) || contactListId <= 0) throw new AppError("ERR_CONTACTLISTITEM_INVALID_LIST", 400);
+  await assertIdInCompany(ContactList, contactListId, companyId);
+
   const record = await CreateService({
-    ...data,
+    name: String(data.name),
+    number: String(data.number ?? "").replace(/\D/g, ""),
+    email: typeof data.email === "string" ? data.email : "",
+    contactListId,
     companyId
   });
 
@@ -138,12 +146,14 @@ export const remove = async (
   return res.status(200).json({ message: "Contact deleted" });
 };
 
+// companyId da query só vale para o super.
 export const findList = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const params = req.query as unknown as FindParams;
-  const records: ContactListItem[] = await FindService(params);
+  const companyId = await resolveCompanyId(req.query.companyId as string, req.user);
+  const contactListId = req.query.contactListId ? Number(req.query.contactListId) : undefined;
+  const records: ContactListItem[] = await FindService({ companyId, contactListId });
 
   return res.status(200).json(records);
 };

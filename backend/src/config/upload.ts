@@ -154,3 +154,72 @@ export const announcementUploadConfig = {
 };
 
 export const publicFilePath = (fileName: string): string => path.resolve(publicFolder, path.basename(String(fileName || "")));
+
+// Mídia da campanha: pasta fixa por campanha (public/campaigns/<id>), vinda da
+// rota já conferida, e só imagem, vídeo, áudio ou PDF. Antes o destino vinha
+// do corpo (typeArch/fileId) e qualquer tipo não bloqueado passava.
+const CAMPAIGN_MEDIA = /^(image\/(png|jpe?g|webp|gif)|video\/(mp4|3gpp|quicktime)|audio\/(mpeg|mp4|ogg|aac|wav|x-wav|webm)|application\/pdf)$/;
+export const isCampaignMediaFile = (file: { originalname: string; mimetype: string }): boolean =>
+  !isBlockedFile(file.originalname) && CAMPAIGN_MEDIA.test(String(file.mimetype || ""));
+
+export const campaignMediaFolder = (campaignId: string | number): string => {
+  if (!/^\d+$/.test(String(campaignId))) throw new AppError("ERR_INVALID_UPLOAD_TYPE", 400);
+  return path.resolve(publicFolder, "campaigns", String(campaignId));
+};
+
+// Caminho da mídia na fila e na exclusão: sempre dentro da pasta da campanha
+// (basename), com o caminho antigo (raiz de public/) como alternativa para as
+// campanhas já existentes.
+export const campaignMediaPath = (campaignId: string | number, mediaPath: string): string => {
+  const name = path.basename(String(mediaPath || ""));
+  const inFolder = path.resolve(campaignMediaFolder(campaignId), name);
+  return fs.existsSync(inFolder) ? inFolder : path.resolve(publicFolder, name);
+};
+
+export const campaignUploadConfig = {
+  limits: { fileSize: MAX_UPLOAD_SIZE, files: 1 },
+  fileFilter(req, file, cb) {
+    if (!isCampaignMediaFile(file)) return cb(new AppError("ERR_INVALID_FILE_TYPE", 400));
+    return cb(null, true);
+  },
+  storage: multer.diskStorage({
+    destination(req, file, cb) {
+      let folder: string;
+      try {
+        folder = campaignMediaFolder(req.params.id);
+      } catch (err) {
+        return cb(err, "");
+      }
+      if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true, mode: 0o755 });
+      return cb(null, folder);
+    },
+    filename(req, file, cb) {
+      return cb(null, `${Date.now()}_${sanitizeFileName(file.originalname)}`);
+    }
+  })
+};
+
+// Planilha de contatos: pasta privada (fora de public/), só .xlsx e .csv, até
+// 5MB; o arquivo é apagado depois de importar. Antes ficava em public/ para
+// sempre, acessível por URL.
+const privateUploadFolder = path.resolve(__dirname, "..", "..", "private", "imports");
+const SPREADSHEET_EXTENSIONS = [".xlsx", ".csv"];
+export const isSpreadsheetFile = (file: { originalname: string }): boolean =>
+  SPREADSHEET_EXTENSIONS.includes(path.extname(String(file.originalname || "")).toLowerCase());
+
+export const spreadsheetUploadConfig = {
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  fileFilter(req, file, cb) {
+    if (!isSpreadsheetFile(file)) return cb(new AppError("ERR_INVALID_FILE_TYPE", 400));
+    return cb(null, true);
+  },
+  storage: multer.diskStorage({
+    destination(req, file, cb) {
+      if (!fs.existsSync(privateUploadFolder)) fs.mkdirSync(privateUploadFolder, { recursive: true, mode: 0o700 });
+      return cb(null, privateUploadFolder);
+    },
+    filename(req, file, cb) {
+      return cb(null, `${Date.now()}_${Math.random().toString(36).slice(2)}${path.extname(file.originalname).toLowerCase()}`);
+    }
+  })
+};
