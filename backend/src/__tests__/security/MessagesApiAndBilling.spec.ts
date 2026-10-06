@@ -23,9 +23,13 @@ jest.mock("../../models/Plan", () => ({ __esModule: true, default: {} }));
 jest.mock("../../models/Invoices", () => ({ __esModule: true, default: { findByPk: invoiceFindByPk } }));
 jest.mock("../../models/Subscriptions", () => ({ __esModule: true, default: {} }));
 jest.mock("../../config/Gn", () => ({ __esModule: true, default: {} }));
-jest.mock("gn-api-sdk-typescript", () => ({
+jest.mock("sdk-node-apis-efi", () => ({
   __esModule: true,
-  default: () => ({ pixCreateImmediateCharge: createCharge, pixGenerateQRCode: generateQr, pixDetailCharge: detailCharge })
+  default: jest.fn().mockImplementation(() => ({
+    pixCreateImmediateCharge: createCharge,
+    pixGenerateQRCode: generateQr,
+    pixDetailCharge: detailCharge
+  }))
 }));
 for (const path of [
   "services/WbotServices/CheckNumber",
@@ -121,7 +125,7 @@ describe("cobrança (correções anteriores, agora com teste)", () => {
     generateQr.mockResolvedValue({ qrcode: "000201...", imagemQrcode: "data:image/png;base64,x" });
     const res = response();
     await SubscriptionController.createSubscription({ user: { companyId: 7 }, body: { invoiceId: 9, price: 1 } }, res);
-    expect(createCharge.mock.calls[0][1].valor.original).toBe("99.90");
+    expect(createCharge.mock.calls[0][0].valor.original).toBe("99.90");
     expect(res.json.mock.calls[0][0].qrcode.qrcode).toBe("000201...");
   });
 

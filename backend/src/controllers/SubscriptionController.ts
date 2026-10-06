@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import express from "express";
 import * as Yup from "yup";
-import Gerencianet from "gn-api-sdk-typescript";
+import EfiPay from "sdk-node-apis-efi";
 import AppError from "../errors/AppError";
 
 import options from "../config/Gn";
@@ -14,16 +14,11 @@ import { logger } from "../utils/logger";
 const app = express();
 
 
-export const index = async (req: Request, res: Response): Promise<Response> => {
-  const gerencianet = Gerencianet(options);
-  return res.json(gerencianet.getSubscriptions());
-};
-
 export const createSubscription = async (
   req: Request,
   res: Response
   ): Promise<Response> => {
-    const gerencianet = Gerencianet(options);
+    const gerencianet = new EfiPay(options);
     const { companyId } = req.user;
 
   const { invoiceId } = req.body;
@@ -48,7 +43,7 @@ export const createSubscription = async (
     solicitacaoPagador: `#Fatura:${invoice.id}`
   };
   try {
-    const pix = await gerencianet.pixCreateImmediateCharge(null, body);
+    const pix = await gerencianet.pixCreateImmediateCharge(body);
 
     const qrcode = await gerencianet.pixGenerateQRCode({
       id: pix.loc.id
@@ -114,7 +109,7 @@ export const createWebhook = async (
   };
 
   try {
-    const gerencianet = Gerencianet(options);
+    const gerencianet = new EfiPay(options);
     const create = await gerencianet.pixConfigWebhook(params, body);
     return res.json(create);
   } catch (error) {
@@ -132,7 +127,7 @@ export const webhook = async (
     return res.json({ ok: true });
   }
   if (Array.isArray(req.body.pix)) {
-    const gerencianet = Gerencianet(options);
+    const gerencianet = new EfiPay(options);
     for (const pix of req.body.pix) {
       try {
         // Os dados do corpo não são confiáveis: a cobrança é consultada na Efí.

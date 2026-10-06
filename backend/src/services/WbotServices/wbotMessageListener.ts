@@ -49,7 +49,8 @@ import { provider } from "./providers";
 import { debounce } from "../../helpers/Debounce";
 import OpenAI from "openai";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
-import ffmpeg from "fluent-ffmpeg";
+import { execFile } from "child_process";
+import ffmpegPath from "@ffmpeg-installer/ffmpeg";
 import {
   SpeechConfig,
   SpeechSynthesizer,
@@ -612,20 +613,23 @@ const convertTextToSpeechAndSaveToFile = (
   });
 };
 
-const convertWavToAnotherFormat = (
+// Converte com o ffmpeg do @ffmpeg-installer (o mesmo do envio de mídia):
+// não depende de um ffmpeg instalado no sistema, que não existe no container.
+export const convertWavToAnotherFormat = (
   inputPath: string,
   outputPath: string,
   toFormat: string
-) => {
+): Promise<string> => {
   return new Promise((resolve, reject) => {
-    ffmpeg()
-      .input(inputPath)
-      .toFormat(toFormat)
-      .on("end", () => resolve(outputPath))
-      .on("error", (err: { message: any }) =>
-        reject(new Error(`Error converting file: ${err.message}`))
-      )
-      .save(outputPath);
+    if (!/^[a-z0-9]+$/i.test(toFormat)) {
+      reject(new Error(`Formato de áudio inválido: ${toFormat}`));
+      return;
+    }
+    // execFile não usa shell: os nomes de arquivo não são interpretados.
+    execFile(ffmpegPath.path, ["-y", "-i", inputPath, "-f", toFormat, outputPath], error => {
+      if (error) reject(new Error(`Error converting file: ${error.message}`));
+      else resolve(outputPath);
+    });
   });
 };
 
