@@ -8,6 +8,7 @@ import { SerializeUser } from "../../helpers/SerializeUser";
 import Queue from "../../models/Queue";
 import Company from "../../models/Company";
 import Setting from "../../models/Setting";
+import { PUBLIC_SETTINGS } from "../../helpers/SettingsAccess";
 
 interface SerializedUser {
   id: number;
@@ -35,7 +36,15 @@ const AuthUserService = async ({
 }: Request): Promise<Response> => {
   const user = await User.findOne({
     where: { email },
-    include: ["queues", { model: Company, include: [{ model: Setting }] }]
+    // Só as configurações públicas: antes o login devolvia todas, com os
+    // tokens das integrações, para qualquer perfil.
+    include: [
+      "queues",
+      {
+        model: Company,
+        include: [{ model: Setting, attributes: ["id", "key", "value"], where: { key: PUBLIC_SETTINGS }, required: false }]
+      }
+    ]
   });
 
   // Mesma resposta para usuário inexistente e senha errada, para não revelar

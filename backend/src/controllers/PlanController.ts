@@ -113,7 +113,8 @@ export const update = async (
     throw new AppError(err.message);
   }
 
-  const plan = await UpdatePlanService(planData);
+  // O id é o da rota (antes vinha do corpo e podia alterar outro plano).
+  const plan = await UpdatePlanService({ ...planData, id: req.params.id });
 
   // const io = getIO();
   // io.emit("plan", {

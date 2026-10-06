@@ -80,6 +80,9 @@ export const update = async (
 
   const { status } = InvoiceData;
   const { id } = req.params;
+  if (!["open", "paid"].includes(String(status))) {
+    throw new AppError("ERR_INVOICE_INVALID_STATUS", 400);
+  }
 
   const plan = await UpdateInvoiceService({
     id,

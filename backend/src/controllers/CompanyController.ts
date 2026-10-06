@@ -2,6 +2,7 @@ import * as Yup from "yup";
 import { Request, Response } from "express";
 // import { getIO } from "../libs/socket";
 import AppError from "../errors/AppError";
+import { parseQueueSchedules } from "../helpers/QueueSchedules";
 import { assertCompanyAccess } from "../helpers/CompanyAccess";
 import Company from "../models/Company";
 import authConfig from "../config/auth";
@@ -174,9 +175,11 @@ export const updateSchedules = async (
   const { id } = req.params;
   await assertCompanyAccess(id, req.user);
 
+  // Só admin (na rota) e com horários válidos: antes qualquer perfil
+  // regravava o expediente da empresa com o que viesse.
   const company = await UpdateSchedulesService({
     id,
-    schedules
+    schedules: parseQueueSchedules(schedules) ?? []
   });
 
   return res.status(200).json(company);

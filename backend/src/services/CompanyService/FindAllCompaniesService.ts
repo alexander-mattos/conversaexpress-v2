@@ -7,7 +7,9 @@ const FindAllCompanyService = async (): Promise<Company[]> => {
     order: [["name", "ASC"]],
     include: [
       { model: Plan, as: "plan", attributes: ["id", "name", "value"] },
-      { model: Setting, as: "settings" }
+      // Só a configuração que a tela de Empresas usa: antes iam todas, com os
+      // tokens das integrações de cada empresa.
+      { model: Setting, as: "settings", attributes: ["id", "key", "value"], where: { key: "campaignsEnabled" }, required: false }
     ]
   });
   return companies;
