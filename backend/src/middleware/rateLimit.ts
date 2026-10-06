@@ -19,3 +19,13 @@ export const passwordResetLimiter = limitHandler(15 * 60 * 1000, 5);
 
 // Cadastros públicos de empresa por IP.
 export const signupLimiter = limitHandler(60 * 60 * 1000, 5);
+
+// API de mensagens: 60 envios por minuto por token (sem o token, por IP).
+export const messagesApiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 60,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  keyGenerator: req => String(req.headers.authorization || req.ip),
+  message: { error: "ERR_TOO_MANY_REQUESTS" }
+});

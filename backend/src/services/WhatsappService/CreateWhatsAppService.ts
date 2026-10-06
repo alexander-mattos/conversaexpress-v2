@@ -155,7 +155,7 @@ const CreateWhatsAppService = async ({
       ratingMessage,
       isDefault,
       companyId,
-      token,
+      token: token ? token : null,
       provider,
       //timeSendQueue,
       //sendIdQueue,

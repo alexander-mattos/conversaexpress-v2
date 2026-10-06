@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { assertRecordInCompany } from "../helpers/CompanyAccess";
 import AppError from "../errors/AppError";
+import fs from "fs";
+import { assertPlanFeature } from "../helpers/KanbanAccess";
 
 import SetTicketMessagesAsRead from "../helpers/SetTicketMessagesAsRead";
 import { getIO } from "../libs/socket";
@@ -108,6 +110,26 @@ export const send = async (req: Request, res: Response): Promise<Response> => {
   const messageData: MessageData = req.body;
   const medias = req.files as Express.Multer.File[];
 
+  // Antes da tentativa de envio (o catch abaixo transforma tudo em 400):
+  // recurso no plano da empresa da conexão, número e texto válidos.
+  const hasMedia = Array.isArray(medias) && medias.length > 0;
+  try {
+    const owner = await Whatsapp.findByPk(whatsappId, { attributes: ["id", "companyId"] });
+    if (!owner) throw new AppError("Acesso não permitido", 401);
+    await assertPlanFeature(owner.companyId, "useExternalApi");
+    const digits = String(messageData.number ?? "").replace(/\D/g, "");
+    if (digits.length < 8 || digits.length > 20) throw new AppError("ERR_API_INVALID_NUMBER", 400);
+    if (messageData.body !== undefined && (typeof messageData.body !== "string" || messageData.body.length > 4096)) {
+      throw new AppError("ERR_API_INVALID_BODY", 400);
+    }
+    if (!hasMedia && !String(messageData.body ?? "").trim()) throw new AppError("ERR_API_INVALID_BODY", 400);
+    messageData.number = digits;
+  } catch (err) {
+    // Recusado: os anexos já gravados pelo multer não ficam no servidor.
+    (medias || []).forEach(media => fs.rmSync(media.path, { force: true }));
+    throw err;
+  }
+
   try {
     const whatsapp = await Whatsapp.findByPk(whatsappId);
 
@@ -142,7 +164,7 @@ export const send = async (req: Request, res: Response): Promise<Response> => {
 
     const ticket = await FindOrCreateTicketService(contact, whatsapp.id!, 0, companyId);
 
-    if (medias) {
+    if (hasMedia) {
       await Promise.all(
         medias.map(async (media: Express.Multer.File) => {
           await req.app.get("queues").messageQueue.add(

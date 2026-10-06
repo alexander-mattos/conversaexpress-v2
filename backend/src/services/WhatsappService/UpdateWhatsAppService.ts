@@ -110,7 +110,8 @@ const UpdateWhatsAppService = async ({
     ratingMessage,
     isDefault,
     companyId,
-    token,
+    // Token vazio vira null: um token "" casava com qualquer chamada sem token.
+    token: token === "" ? null : token,
     //timeSendQueue,
     //sendIdQueue,
     transferQueueId,	

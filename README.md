@@ -138,6 +138,7 @@ Já migrado:
 - colaboração: Chat Interno (com o popover do topo), Informativos (com o popover do topo) e Kanban.
 - campanhas: Campanhas (com relatório), Configurações de envio e Listas de Contatos (com importação de planilha).
 - Configurações: Opções, Horários da empresa e, para o super, Empresas, Planos e Ajuda.
+- Financeiro (faturas com pagamento por Pix), Assinatura e API de mensagens (documentação e testes de envio).
 As demais telas aparecem no menu e abrem uma página "em migração" com link para a mesma tela no frontend atual.
 
 Diferenças em relação ao frontend atual:
@@ -175,6 +176,11 @@ Diferenças em relação ao frontend atual:
   públicas. Só chaves conhecidas com os valores dos selects são aceitas; `campaignsEnabled` é só do
   super; os endereços do IXC e do MK-AUTH precisam ser URL http(s) externa (o mesmo bloqueio de rede
   interna das integrações, conferido de novo antes de cada chamada). Horários da empresa só para admin.
+- Pagamento: o checkout com endereço e cartão (que o backend ignorava) virou um Pix por fatura (QR Code e
+  copia-e-cola); a tela fecha sozinha quando o Pix é confirmado pelo webhook.
+- API de mensagens (`POST /api/messages/send`): token vazio ou ausente é recusado (conexões sem token
+  passam a ter `token = null`; a migration converte os antigos `""`), exige a API externa no plano, valida
+  número e texto e tem limite de 60 envios por minuto por token.
 
 `.env` (copie de `.env.example`; as variáveis `NEXT_PUBLIC_*` entram no build):
 ```
