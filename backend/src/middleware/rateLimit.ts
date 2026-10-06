@@ -1,4 +1,4 @@
-import { rateLimit } from "express-rate-limit";
+import { ipKeyGenerator, rateLimit } from "express-rate-limit";
 
 const limitHandler = (windowMs: number, limit: number, skipSuccessfulRequests = false) =>
   rateLimit({
@@ -26,6 +26,9 @@ export const messagesApiLimiter = rateLimit({
   limit: 60,
   standardHeaders: "draft-7",
   legacyHeaders: false,
-  keyGenerator: req => String(req.headers.authorization || req.ip),
+  // Sem token, agrupa IPv6 pela sub-rede /56 (como o padrão da biblioteca),
+  // para que trocar de endereço dentro do mesmo bloco não fure o limite.
+  keyGenerator: req =>
+    req.headers.authorization ? `token:${req.headers.authorization}` : `ip:${ipKeyGenerator(req.ip || "")}`,
   message: { error: "ERR_TOO_MANY_REQUESTS" }
 });

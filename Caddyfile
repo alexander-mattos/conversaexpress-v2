@@ -1,0 +1,20 @@
+# HTTPS automático (Let's Encrypt) para os dois domínios do .env.
+# Teste local sem certificado público: CADDY_GLOBAL_OPTIONS=local_certs.
+{
+	email {$ACME_EMAIL}
+	{$CADDY_GLOBAL_OPTIONS}
+}
+
+{$FRONTEND_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy frontend:3000
+}
+
+{$BACKEND_DOMAIN} {
+	encode zstd gzip
+	# Uploads de mídia (o backend limita cada tipo de arquivo).
+	request_body {
+		max_size 100MB
+	}
+	reverse_proxy backend:8080
+}

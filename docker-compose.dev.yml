@@ -1,0 +1,97 @@
+# Desenvolvimento com hot reload (código montado do host):
+#   docker compose -f docker-compose.dev.yml up
+# Frontend em http://localhost:3000, API em http://localhost:8080,
+# Postgres em localhost:5432 e Redis em localhost:6379.
+name: conversaexpress-dev
+
+x-dev-env: &dev-env
+  NODE_ENV: development
+  PORT: "8080"
+  BACKEND_URL: http://localhost:8080
+  FRONTEND_URL: http://localhost:3000
+  PROXY_PORT: ""
+  DB_DIALECT: postgres
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_NAME: conversaexpress
+  DB_USER: conversaexpress
+  DB_PASS: conversaexpress
+  REDIS_URI: redis://:conversaexpress@redis:6379
+  JWT_SECRET: dev-jwt-secret-troque-em-producao
+  JWT_REFRESH_SECRET: dev-jwt-refresh-secret-troque-em-producao
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: conversaexpress
+      POSTGRES_USER: conversaexpress
+      POSTGRES_PASSWORD: conversaexpress
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U conversaexpress -d conversaexpress"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7
+    command: ["redis-server", "--requirepass", "conversaexpress"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a conversaexpress --no-auth-warning ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    image: node:24-bookworm-slim
+    working_dir: /app
+    environment: *dev-env
+    # Migrations rodam a partir do dist/ (.sequelizerc); depois, ts-node-dev com reload.
+    command: >
+      sh -c "npm ci --no-audit --no-fund &&
+             npm run build &&
+             node docker/db-wait.js &&
+             npx sequelize db:migrate &&
+             (node docker/db-wait.js --is-empty && npx sequelize db:seed:all || true) &&
+             npm run dev:server"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    image: node:24-bookworm-slim
+    working_dir: /app
+    environment:
+      NEXT_PUBLIC_BACKEND_URL: http://localhost:8080
+      NEXT_PUBLIC_HOURS_CLOSE_TICKETS_AUTO: "24"
+      NEXT_TELEMETRY_DISABLED: "1"
+      # Reload confiável com o código montado de outro sistema de arquivos.
+      WATCHPACK_POLLING: "true"
+    command: sh -c "npm ci --no-audit --no-fund && npx next dev -H 0.0.0.0 -p 3000"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+      - frontend_next:/app/.next
+    depends_on:
+      - backend
+
+volumes:
+  pgdata_dev:
+  backend_node_modules:
+  frontend_node_modules:
+  frontend_next:
