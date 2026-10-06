@@ -19,14 +19,20 @@ import { toastError } from "@/lib/toastError";
 import { STATUS_KEYS, formatDateTime, reportCounts, type Campaign } from "@/lib/campaigns/campaigns";
 
 function Counter({ icon, title, value, loading }: { icon: ReactNode; title: string; value: ReactNode; loading: boolean }) {
+  // 0 é valor (entregues = 0); só vazio vira "-".
+  const shown = value === null || value === undefined || value === "" ? "-" : value;
   return (
     <Paper variant="outlined" sx={{ p: 2, display: "flex", alignItems: "center", gap: 2 }} data-testid="campaign-counter">
-      <Box sx={{ fontSize: 40, color: "primary.main", display: "flex" }}>{icon}</Box>
+      <Box sx={{ fontSize: 40, color: "text.secondary", display: "flex" }}>{icon}</Box>
       <Box sx={{ minWidth: 0 }}>
-        <Typography variant="body2" color="text.secondary">
-          {title}
-        </Typography>
-        {loading ? <Skeleton width={80} /> : <Typography variant="h6" noWrap>{value || "-"}</Typography>}
+        <Typography variant="subtitle1">{title}</Typography>
+        {loading ? (
+          <Skeleton width={80} />
+        ) : (
+          <Typography variant="body2" color="text.secondary" noWrap>
+            {shown}
+          </Typography>
+        )}
       </Box>
     </Paper>
   );
