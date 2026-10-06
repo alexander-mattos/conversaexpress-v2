@@ -54,7 +54,7 @@ services:
     environment: *dev-env
     # Migrations rodam a partir do dist/ (.sequelizerc); depois, ts-node-dev com reload.
     command: >
-      sh -c "npm ci --no-audit --no-fund &&
+      sh -c "sh /dev-install.sh &&
              npm run build &&
              node docker/db-wait.js &&
              npx sequelize db:migrate &&
@@ -65,6 +65,7 @@ services:
     volumes:
       - ./backend:/app
       - backend_node_modules:/app/node_modules
+      - ./docker/dev-install.sh:/dev-install.sh:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -80,12 +81,13 @@ services:
       NEXT_TELEMETRY_DISABLED: "1"
       # Reload confiável com o código montado de outro sistema de arquivos.
       WATCHPACK_POLLING: "true"
-    command: sh -c "npm ci --no-audit --no-fund && npx next dev -H 0.0.0.0 -p 3000"
+    command: sh -c "sh /dev-install.sh && npx next dev -H 0.0.0.0 -p 3000"
     ports:
       - "3000:3000"
     volumes:
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules
+      - ./docker/dev-install.sh:/dev-install.sh:ro
       - frontend_next:/app/.next
     depends_on:
       - backend
