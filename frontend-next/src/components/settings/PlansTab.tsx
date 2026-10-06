@@ -122,7 +122,7 @@ export default function PlansTab() {
     }
   };
 
-  const yesNo = (value: boolean) => (value ? t("plans.form.enabled") : t("plans.form.disabled"));
+  const yesNo = (value: boolean) => (value ? t("plans.form.yes") : t("plans.form.no"));
   const label = (key: string) => (key.includes(".") ? t(key) : key);
 
   return (
