@@ -28,3 +28,22 @@ export const usePlanGuard = (flag: keyof PlanFlags, { adminOnly = true }: { admi
 
   return allowed;
 };
+
+// Campanhas: liberadas pelo plano ou pela configuração campaignsEnabled da
+// empresa, para todos os perfis (igual ao menu e à API).
+export const useCampaignsGuard = (): boolean => {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const { user, campaignsEnabled } = useAuth();
+  const { flags, loaded } = usePlanFlagsState(user);
+  const allowed = loaded && (flags.useCampaigns || campaignsEnabled);
+
+  useEffect(() => {
+    if (loaded && !allowed) {
+      toast.error(t("backendErrors.ERR_NO_PERMISSION"));
+      router.replace("/");
+    }
+  }, [loaded, allowed, router, t]);
+
+  return allowed;
+};

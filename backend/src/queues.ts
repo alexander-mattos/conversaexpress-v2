@@ -14,6 +14,7 @@ import ContactList from "./models/ContactList";
 import ContactListItem from "./models/ContactListItem";
 import { isEmpty, isNil, isArray } from "lodash";
 import CampaignSetting from "./models/CampaignSetting";
+import { campaignMediaPath } from "./config/upload";
 import CampaignShipping from "./models/CampaignShipping";
 import GetWhatsappWbot from "./helpers/GetWhatsappWbot";
 import sequelize from "./database";
@@ -353,7 +354,7 @@ async function getCampaign(id) {
       {
         model: Whatsapp,
         as: "whatsapp",
-        attributes: ["id", "name"]
+        attributes: ["id", "name", "companyId"]
       },
       {
         model: CampaignShipping,
@@ -381,18 +382,27 @@ async function getSettings(campaign) {
   let greaterInterval: number = 60;
   let variables: any[] = [];
 
+  // Valor antigo que não é JSON válido fica com o padrão, em vez de
+  // derrubar o processamento da campanha.
+  const parse = (value: string, fallback: any) => {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return fallback;
+    }
+  };
   settings.forEach(setting => {
     if (setting.key === "messageInterval") {
-      messageInterval = JSON.parse(setting.value);
+      messageInterval = parse(setting.value, messageInterval);
     }
     if (setting.key === "longerIntervalAfter") {
-      longerIntervalAfter = JSON.parse(setting.value);
+      longerIntervalAfter = parse(setting.value, longerIntervalAfter);
     }
     if (setting.key === "greaterInterval") {
-      greaterInterval = JSON.parse(setting.value);
+      greaterInterval = parse(setting.value, greaterInterval);
     }
     if (setting.key === "variables") {
-      variables = JSON.parse(setting.value);
+      variables = parse(setting.value, variables);
     }
   });
 
@@ -657,6 +667,12 @@ async function handleDispatchCampaign(job) {
       return;
     }
 
+    // A conexão precisa ser da empresa da campanha.
+    if (Number(campaign.whatsapp.companyId) !== Number(campaign.companyId)) {
+      logger.error(`campaignQueue -> DispatchCampaign -> error: whatsapp of another company`);
+      return;
+    }
+
     if (!wbot?.user?.id) {
       logger.error(`campaignQueue -> DispatchCampaign -> error: wbot user not found`);
       return;
@@ -701,8 +717,9 @@ async function handleDispatchCampaign(job) {
 
       logger.info("[🚩] - Preparando midia da campanha: "+ campaign.mediaPath +" | CampaignShippingId: " + campaignShippingId + " CampanhaID: " + campaignId);
 
-      const publicFolder = path.resolve(__dirname, "..", "public");
-      const filePath = path.join(publicFolder, campaign.mediaPath);
+      // basename dentro da pasta da campanha: um mediaPath forjado não lê
+      // outros arquivos do servidor.
+      const filePath = campaignMediaPath(campaign.id, campaign.mediaPath);
 
       const options = await getMessageOptions(campaign.mediaName, filePath, body);
       if (Object.keys(options).length) {
