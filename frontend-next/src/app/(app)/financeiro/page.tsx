@@ -66,7 +66,7 @@ export default function FinanceiroPage() {
                   </TableCell>
                   <TableCell align="center">
                     {status === "paid" ? (
-                      <Button size="small" variant="outlined" disabled>
+                      <Button size="small" variant="outlined" color="inherit" sx={{ pointerEvents: "none" }} tabIndex={-1}>
                         {t("invoices.PAID")}
                       </Button>
                     ) : (
