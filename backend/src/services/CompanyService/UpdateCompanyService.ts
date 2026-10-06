@@ -1,6 +1,7 @@
 import AppError from "../../errors/AppError";
 import Company from "../../models/Company";
 import Setting from "../../models/Setting";
+import Plan from "../../models/Plan";
 
 interface CompanyData {
   name: string;
@@ -31,6 +32,10 @@ const UpdateCompanyService = async (
 
   if (!company) {
     throw new AppError("ERR_NO_COMPANY_FOUND", 404);
+  }
+
+  if (planId !== undefined && planId !== null && !(await Plan.findByPk(planId, { attributes: ["id"] }))) {
+    throw new AppError("ERR_PLAN_NOT_FOUND", 404);
   }
 
   await company.update({

@@ -137,6 +137,7 @@ Já migrado:
   Conexões (com QR Code), Lista de arquivos, Integrações e Open.Ai.
 - colaboração: Chat Interno (com o popover do topo), Informativos (com o popover do topo) e Kanban.
 - campanhas: Campanhas (com relatório), Configurações de envio e Listas de Contatos (com importação de planilha).
+- Configurações: Opções, Horários da empresa e, para o super, Empresas, Planos e Ajuda.
 As demais telas aparecem no menu e abrem uma página "em migração" com link para a mesma tela no frontend atual.
 
 Diferenças em relação ao frontend atual:
@@ -169,6 +170,11 @@ Diferenças em relação ao frontend atual:
   fica em `public/campaigns/<id>/` (só imagem, vídeo, áudio ou PDF). A importação de contatos aceita
   `.xlsx` e `.csv` (o `.xls` antigo não), lida pela `read-excel-file`, e a planilha é apagada do
   servidor depois de importada (fica em `backend/private/imports` só durante a importação).
+- Configurações: as credenciais das integrações (Asaas, IXC, MK-AUTH) são só de escrita (em branco
+  mantém a atual) e não voltam mais na API, no socket nem no login; o atendente só recebe as opções
+  públicas. Só chaves conhecidas com os valores dos selects são aceitas; `campaignsEnabled` é só do
+  super; os endereços do IXC e do MK-AUTH precisam ser URL http(s) externa (o mesmo bloqueio de rede
+  interna das integrações, conferido de novo antes de cada chamada). Horários da empresa só para admin.
 
 `.env` (copie de `.env.example`; as variáveis `NEXT_PUBLIC_*` entram no build):
 ```

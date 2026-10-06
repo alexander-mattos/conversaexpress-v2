@@ -7,8 +7,20 @@ import formatBody from "../../helpers/Mustache";
 
 
 import axios from 'axios';
+import { assertSafeExternalUrl } from "../../helpers/SafeExternalUrl";
 import UpdateTicketService from "../TicketServices/UpdateTicketService";
 import fs from 'fs';
+
+
+const safeIntegrationUrl = async (value?: string | null): Promise<string> => {
+  if (!value) return "";
+  try {
+    await assertSafeExternalUrl(value);
+    return value;
+  } catch {
+    return "";
+  }
+};
 
 export const provider = async (ticket: Ticket, msg: proto.IWebMessageInfo, companyId: number, contact: Contact, wbot: WASocket) => {
   const filaescolhida = ticket.queue?.name
@@ -58,7 +70,9 @@ export const provider = async (ticket: Ticket, msg: proto.IWebMessageInfo, compa
       }
     });
 
-    let urlmkauth = ipmkauth.value
+    // As URLs de integração vêm da configuração da empresa: só endereços
+    // externos (sem rede interna do servidor), conferidos com DNS antes de usar.
+    let urlmkauth = await safeIntegrationUrl(ipmkauth?.value)
     if (urlmkauth.substr(-1) === '/') {
       urlmkauth = urlmkauth.slice(0, -1);
     }
@@ -68,7 +82,7 @@ export const provider = async (ticket: Ticket, msg: proto.IWebMessageInfo, compa
     const Client_Id = clientidmkauth.value
     const Client_Secret = clientesecretmkauth.value
     const ixckeybase64 = btoa(ixcapikey.value);
-    const urlixc = urlixcdb.value
+    const urlixc = await safeIntegrationUrl(urlixcdb?.value)
     const asaastk = asaastoken.value
 
     const cnpj_cpf = getBodyMessage(msg);
@@ -607,7 +621,7 @@ export const provider = async (ticket: Ticket, msg: proto.IWebMessageInfo, compa
       }
     }
 
-    if (ixcapikey.value != "" && urlixcdb.value != "") {
+    if (ixcapikey.value != "" && urlixc != "") {
       if (isNumeric(numberCPFCNPJ) === true) {
         if (cpfcnpj.length > 2) {
           const isCPFCNPJ = validaCpfCnpj(numberCPFCNPJ)
@@ -1207,7 +1221,9 @@ export const provider = async (ticket: Ticket, msg: proto.IWebMessageInfo, compa
       }
     });
 
-    let urlmkauth = ipmkauth.value
+    // As URLs de integração vêm da configuração da empresa: só endereços
+    // externos (sem rede interna do servidor), conferidos com DNS antes de usar.
+    let urlmkauth = await safeIntegrationUrl(ipmkauth?.value)
     if (urlmkauth.substr(-1) === '/') {
       urlmkauth = urlmkauth.slice(0, -1);
     }
@@ -1217,13 +1233,13 @@ export const provider = async (ticket: Ticket, msg: proto.IWebMessageInfo, compa
     const Client_Id = clientidmkauth.value
     const Client_Secret = clientesecretmkauth.value
     const ixckeybase64 = btoa(ixcapikey.value);
-    const urlixc = urlixcdb.value
+    const urlixc = await safeIntegrationUrl(urlixcdb?.value)
     const asaastk = asaastoken.value
 
     const cnpj_cpf = getBodyMessage(msg);
     let numberCPFCNPJ = cpfcnpj;
 
-    if (ixcapikey.value != "" && urlixcdb.value != "") {
+    if (ixcapikey.value != "" && urlixc != "") {
       if (isNumeric(numberCPFCNPJ) === true) {
         if (cpfcnpj.length > 2) {
           const isCPFCNPJ = validaCpfCnpj(numberCPFCNPJ)

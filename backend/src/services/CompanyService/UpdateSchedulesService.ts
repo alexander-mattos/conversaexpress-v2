@@ -1,9 +1,10 @@
 import AppError from "../../errors/AppError";
 import Company from "../../models/Company";
+import { QueueSchedule } from "../../helpers/QueueSchedules";
 
 type ScheduleData = {
   id: number | string;
-  schedules: [];
+  schedules: QueueSchedule[];
 };
 
 const UpdateSchedulesService = async ({
