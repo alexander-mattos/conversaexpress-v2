@@ -53,3 +53,20 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+
+  docker:
+    name: Docker (build das imagens + compose)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Valida os arquivos compose
+        run: |
+          sed -e 's/^DB_PASS=$/DB_PASS=ci/' -e 's/^REDIS_PASS=$/REDIS_PASS=ci/' \
+              -e 's/^JWT_SECRET=$/JWT_SECRET=ci/' -e 's/^JWT_REFRESH_SECRET=$/JWT_REFRESH_SECRET=ci/' \
+              .env.docker.example > .env
+          docker compose config -q
+          docker compose -f docker-compose.dev.yml config -q
+      - name: Build do backend
+        run: docker build -t conversaexpress-backend:ci backend
+      - name: Build do frontend
+        run: docker build --build-arg NEXT_PUBLIC_BACKEND_URL=https://api.exemplo.com -t conversaexpress-frontend:ci frontend

@@ -7,9 +7,55 @@ O ConversaExpress é uma plataforma de atendimento via WhatsApp para equipes: ti
 O repositório possui 3 pastas:
 - **backend**: API em Express + TypeScript (Sequelize, Baileys, Bull, Socket.IO)
 - **frontend**: interface em Next.js 16 + TypeScript + MUI 9
-- **instalador**: scripts para instalação automática em servidores Ubuntu
+- **instalador**: scripts para instalação automática em servidores Ubuntu (pm2 + nginx)
 
-Consulte **[Implantação](#-implanta%C3%A7%C3%A3o-em-produ%C3%A7%C3%A3o)** para saber como implantar o projeto.
+A forma recomendada de implantar é com **[Docker](#-docker-recomendado)**. O instalador continua disponível
+(veja **[Implantação](#-implanta%C3%A7%C3%A3o-em-produ%C3%A7%C3%A3o)**).
+
+## 🐳 Docker (recomendado)
+
+O `docker-compose.yml` da raiz sobe tudo: Postgres 17, Redis 7, backend, frontend e o
+[Caddy](https://caddyserver.com/) na frente, com HTTPS automático (Let's Encrypt) para os dois domínios.
+Banco e Redis ficam só na rede interna; apenas as portas 80 e 443 são publicadas.
+
+### Produção
+Pré-requisitos: Docker com o plugin compose, e o DNS dos dois domínios apontando para o servidor.
+```
+git clone <repositório> conversaexpress && cd conversaexpress
+cp .env.docker.example .env      # preencha domínios, e-mail e senhas (openssl rand -base64 32)
+docker compose up -d --build
+```
+- Na primeira subida, o backend roda as migrations, cria a empresa padrão e o usuário
+  `admin@admin.com` / `123456` (**troque a senha no primeiro acesso**) e migra as filas antigas do Bull.
+  Nas seguintes, só as migrations novas. `RUN_MIGRATIONS=false` desliga esse passo.
+- Certificado Pix da Efí: coloque o `.p12` em `backend/certs/` e preencha `GERENCIANET_PIX_CERT` (nome sem extensão).
+- Logs: `docker compose logs -f backend`. Estado: `docker compose ps` (todos os serviços têm healthcheck).
+
+Atualizar:
+```
+git pull
+docker compose up -d --build
+```
+A URL do backend entra no build do frontend: se mudar `BACKEND_DOMAIN`, rode o `--build` de novo.
+
+Backup (banco e mídias enviadas):
+```
+docker compose exec -T postgres pg_dump -U conversaexpress conversaexpress > backup.sql
+docker run --rm -v conversaexpress_backend_public:/dados -v "$PWD":/destino busybox \
+  tar czf /destino/midias.tgz -C /dados .
+```
+
+Testar localmente com HTTPS (sem certificado público): no `.env`, use `FRONTEND_DOMAIN=localhost`,
+`BACKEND_DOMAIN=api.localhost` e `CADDY_GLOBAL_OPTIONS=local_certs`.
+
+### Desenvolvimento
+```
+docker compose -f docker-compose.dev.yml up
+```
+Frontend em http://localhost:3000, API em http://localhost:8080, Postgres em `localhost:5432` e
+Redis em `localhost:6379` (usuário, senha e banco: `conversaexpress`). O código é montado do host:
+o backend reinicia sozinho (ts-node-dev) e o frontend usa o `next dev`. Os dados ficam no volume
+`pgdata_dev` (`docker compose -f docker-compose.dev.yml down -v` apaga tudo).
 
 ### 📋 Pré-requisitos
 
@@ -115,6 +161,7 @@ npm run dev                  # http://localhost:3000
 A cada push na `main` e em cada pull request, o GitHub Actions (`.github/workflows/ci.yml`) roda:
 - **backend**: `npm run typecheck`, `npm run test:unit` e `npm run build` (o `npm run lint` roda em modo informativo)
 - **frontend**: `npm run typecheck`, `npm run lint`, `npm test` e `npm run build`
+- **docker**: valida os dois arquivos compose e faz o build das imagens do backend e do frontend
 
 Para rodar localmente:
 ```
@@ -261,6 +308,7 @@ pm2 save
 
 * [Express](https://expressjs.com/pt-br/) - O framework backend usado
 * [Next.js](https://nextjs.org/) e [MUI](https://mui.com/) - Frontend
+* [Docker](https://www.docker.com/) e [Caddy](https://caddyserver.com/) - Implantação
 * [Baileys](https://github.com/WhiskeySockets/Baileys) - Conexão com o WhatsApp
 * [NPM](https://www.npmjs.com/) - Gerenciador de dependências
 
