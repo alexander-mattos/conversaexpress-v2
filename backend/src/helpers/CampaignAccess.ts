@@ -8,6 +8,7 @@ import Whatsapp from "../models/Whatsapp";
 import ContactList from "../models/ContactList";
 import Tag from "../models/Tag";
 import Files from "../models/Files";
+import { isSuperUser } from "./CompanyAccess";
 
 // Campanhas ficam liberadas pelo plano ou pela configuração campaignsEnabled
 // da empresa (mesma regra do menu). Antes só a tela conferia.
@@ -22,7 +23,10 @@ export const campaignsEnabledFor = async (companyId: number): Promise<boolean> =
 };
 
 export const campaignsPlan = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  if (!(await campaignsEnabledFor(req.user.companyId))) throw new AppError("ERR_PLAN_FEATURE_DISABLED", 403);
+  // O super acessa todos os recursos, qualquer que seja o plano.
+  if (!(await isSuperUser(req.user.id)) && !(await campaignsEnabledFor(req.user.companyId))) {
+    throw new AppError("ERR_PLAN_FEATURE_DISABLED", 403);
+  }
   next();
 };
 

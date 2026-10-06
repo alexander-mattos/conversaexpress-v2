@@ -52,8 +52,8 @@ const emitTicketUpdate = async (ticketId: number, companyId: number): Promise<Ti
 // Move o ticket de coluna no Kanban: tira as tags de kanban, mantém as comuns
 // e põe a nova (tagId null = "Em aberto"), tudo numa transação.
 export const kanban = async (req: Request, res: Response): Promise<Response> => {
-  const { companyId } = req.user;
-  await assertPlanFeature(companyId, "useKanban");
+  const { companyId, id: userId } = req.user;
+  await assertPlanFeature(companyId, "useKanban", userId);
 
   const ticket = await loadTicket(req.params.ticketId, req.user);
   const raw = req.body?.tagId;
@@ -78,8 +78,8 @@ export const kanban = async (req: Request, res: Response): Promise<Response> => 
 
 // Rotas antigas (frontend atual): mesmas checagens e sem linhas duplicadas.
 export const store = async (req: Request, res: Response): Promise<Response> => {
-  const { companyId } = req.user;
-  await assertPlanFeature(companyId, "useKanban");
+  const { companyId, id: userId } = req.user;
+  await assertPlanFeature(companyId, "useKanban", userId);
   const ticket = await loadTicket(req.params.ticketId, req.user);
   const tagId = parseTagId(req.params.tagId);
   await assertTagInCompany(tagId, companyId);
@@ -90,8 +90,8 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 };
 
 export const remove = async (req: Request, res: Response): Promise<Response> => {
-  const { companyId } = req.user;
-  await assertPlanFeature(companyId, "useKanban");
+  const { companyId, id: userId } = req.user;
+  await assertPlanFeature(companyId, "useKanban", userId);
   const ticket = await loadTicket(req.params.ticketId, req.user);
 
   const kanbanIds = await kanbanTagIds(companyId);

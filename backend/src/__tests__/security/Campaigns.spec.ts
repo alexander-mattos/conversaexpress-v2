@@ -191,6 +191,17 @@ describe("campanha: configurações e plano", () => {
     companyFindByPk.mockResolvedValue({ plan: { useCampaigns: true } });
     expect(await campaignsEnabledFor(7)).toBe(true);
   });
+
+  it("o super passa pelo plano; os demais recebem 403 sem campanhas", async () => {
+    const { campaignsPlan } = require("../../helpers/CampaignAccess");
+    companyFindByPk.mockResolvedValue({ plan: { useCampaigns: false } });
+    findOneBy.Setting.mockResolvedValue(null);
+    const next = jest.fn();
+    await expect(campaignsPlan({ user: admin }, response(), next)).rejects.toMatchObject({ statusCode: 403 });
+    userFindByPk.mockResolvedValue({ id: 1, super: true });
+    await campaignsPlan({ user: admin }, response(), next);
+    expect(next).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("listas: outra empresa", () => {

@@ -41,7 +41,8 @@ import AttachFileIcon from "@mui/icons-material/AttachFile";
 import DeviceHubOutlinedIcon from "@mui/icons-material/DeviceHubOutlined";
 import { useAuth } from "@/contexts/AuthContext";
 import { can } from "@/lib/rules";
-import { useConnectionWarning, usePlanFlags, useUnreadChats, useVersion } from "@/hooks/useMenuStatus";
+import { useConnectionWarning, useUnreadChats, useVersion } from "@/hooks/useMenuStatus";
+import { usePlan } from "@/contexts/PlanContext";
 
 function MenuLink({ to, primary, icon }: { to: string; primary: string; icon: ReactNode }) {
   return (
@@ -58,7 +59,7 @@ function MenuLink({ to, primary, icon }: { to: string; primary: string; icon: Re
 export default function MainMenu({ collapsed, onNavigate }: { collapsed: boolean; onNavigate: () => void }) {
   const { t } = useTranslation();
   const { user, campaignsEnabled } = useAuth();
-  const plan = usePlanFlags(user);
+  const plan = usePlan().flags;
   const isAdmin = can(user?.profile, "drawer-admin-items:view");
   const connectionWarning = useConnectionWarning(user, isAdmin);
   const hasUnreadChats = useUnreadChats(user);

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Backdrop, CircularProgress } from "@mui/material";
 import AppShell from "@/components/layout/AppShell";
 import { useAuth } from "@/contexts/AuthContext";
+import { PlanProvider } from "@/contexts/PlanContext";
 
 // Área logada: sem sessão válida, volta para o login (como o Route.js atual).
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -23,5 +24,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  return <AppShell>{children}</AppShell>;
+  return (
+    <PlanProvider>
+      <AppShell>{children}</AppShell>
+    </PlanProvider>
+  );
 }

@@ -114,7 +114,7 @@ export const kanban = async (req: Request, res: Response): Promise<Response> => 
   const { date, updatedAt, searchParam, showAll, withUnreadMessages } = req.query as IndexQuery;
   const { companyId, id, profile } = req.user;
 
-  await assertPlanFeature(companyId, "useKanban");
+  await assertPlanFeature(companyId, "useKanban", id);
 
   const { tickets, count, hasMore } = await ListTicketsServiceKanban({
     user: { id, profile },

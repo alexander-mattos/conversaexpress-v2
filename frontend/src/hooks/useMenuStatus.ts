@@ -6,54 +6,6 @@ import { socketManager } from "@/lib/socket";
 import { toastError } from "@/lib/toastError";
 import type { User } from "@/contexts/AuthContext";
 
-export interface PlanFlags {
-  useCampaigns: boolean;
-  useKanban: boolean;
-  useOpenAi: boolean;
-  useIntegrations: boolean;
-  useSchedules: boolean;
-  useInternalChat: boolean;
-  useExternalApi: boolean;
-}
-
-const NO_FLAGS: PlanFlags = {
-  useCampaigns: false,
-  useKanban: false,
-  useOpenAi: false,
-  useIntegrations: false,
-  useSchedules: false,
-  useInternalChat: false,
-  useExternalApi: false
-};
-
-// Recursos liberados pelo plano da empresa (GET /companies/listPlan/:id).
-// "loaded" diferencia "ainda carregando" de "plano sem o recurso".
-export const usePlanFlagsState = (user: User | null): { flags: PlanFlags; loaded: boolean } => {
-  const [state, setState] = useState<{ flags: PlanFlags; loaded: boolean }>({ flags: NO_FLAGS, loaded: false });
-  const companyId = user?.companyId;
-
-  useEffect(() => {
-    if (!companyId) return;
-    let active = true;
-    api
-      .get<{ plan: Partial<PlanFlags> }>(`/companies/listPlan/${companyId}`)
-      .then(({ data }) => {
-        if (active) setState({ flags: { ...NO_FLAGS, ...data.plan }, loaded: true });
-      })
-      .catch(err => {
-        toastError(err);
-        if (active) setState(current => ({ ...current, loaded: true }));
-      });
-    return () => {
-      active = false;
-    };
-  }, [companyId]);
-
-  return state;
-};
-
-export const usePlanFlags = (user: User | null): PlanFlags => usePlanFlagsState(user).flags;
-
 export const useVersion = (): string => {
   const [version, setVersion] = useState("");
   useEffect(() => {
