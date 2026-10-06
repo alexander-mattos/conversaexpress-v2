@@ -111,7 +111,8 @@ docker compose -f docker-compose.dev.yml up
 ```
 Frontend em http://localhost:3000, API em http://localhost:8080, Postgres em `localhost:5432` e
 Redis em `localhost:6379` (usuário, senha e banco: `conversaexpress`). O código é montado do host:
-o backend reinicia sozinho (ts-node-dev) e o frontend usa o `next dev`. Os dados ficam no volume
+o backend reinicia sozinho (ts-node-dev) e o frontend usa o `next dev`. O `npm ci` só roda na primeira
+subida e quando o `package-lock.json` muda (`docker/dev-install.sh`); nas outras, o container inicia direto. Os dados ficam no volume
 `pgdata_dev` (`docker compose -f docker-compose.dev.yml down -v` apaga tudo).
 
 ### 📋 Pré-requisitos

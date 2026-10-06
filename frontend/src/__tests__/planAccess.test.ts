@@ -38,3 +38,10 @@ describe("effectiveFlags", () => {
     expect(effectiveFlags({ ...NO_FLAGS, useKanban: true }, false)).toEqual({ ...NO_FLAGS, useKanban: true });
   });
 });
+
+describe("retryDelay (consulta do plano)", () => {
+  it("cresce até 30s e não desiste", async () => {
+    const { retryDelay } = await import("@/contexts/PlanContext");
+    expect([0, 1, 2, 3, 4, 5, 6, 50].map(retryDelay)).toEqual([1000, 2000, 4000, 8000, 15000, 30000, 30000, 30000]);
+  });
+});
