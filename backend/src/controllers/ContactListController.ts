@@ -1,5 +1,6 @@
 import * as Yup from "yup";
-import { assertRecordInCompany } from "../helpers/CompanyAccess";
+import { assertRecordInCompany, resolveCompanyId } from "../helpers/CompanyAccess";
+import fs from "fs";
 import { Request, Response } from "express";
 import { getIO } from "../libs/socket";
 
@@ -24,10 +25,6 @@ type IndexQuery = {
 
 type StoreData = {
   name: string;
-  companyId: string;
-};
-
-type FindParams = {
   companyId: string;
 };
 
@@ -134,24 +131,32 @@ export const remove = async (
   return res.status(200).json({ message: "Contact list deleted" });
 };
 
+// companyId da query só vale para o super (antes listava as listas de
+// qualquer empresa).
 export const findList = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const params = req.query as FindParams;
-  const records: ContactList[] = await FindService(params);
+  const companyId = await resolveCompanyId(req.query.companyId as string, req.user);
+  const records: ContactList[] = await FindService({ companyId: String(companyId) });
 
   return res.status(200).json(records);
 };
 
 export const upload = async (req: Request, res: Response) => {
-  const files = req.files as Express.Multer.File[];
-  const file: Express.Multer.File = head(files) as Express.Multer.File;
+  const file = head(req.files as Express.Multer.File[]);
   const { id } = req.params;
-  await assertRecordInCompany(ContactList, id, req.user);
   const { companyId } = req.user;
+  if (!file) throw new AppError("ERR_NO_FILE", 400);
 
-  const response = await ImportContacts(+id, companyId, file);
+  let response;
+  try {
+    await assertRecordInCompany(ContactList, id, req.user);
+    response = await ImportContacts(+id, companyId, file);
+  } finally {
+    // A planilha não fica no servidor depois de importada.
+    fs.rmSync(file.path, { force: true });
+  }
 
   const io = getIO();
 

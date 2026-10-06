@@ -1,88 +1,31 @@
-import { createContactListFromTag, createContactListFromTagAndContactList } from "../../controllers/CampaignController";
 import AppError from "../../errors/AppError";
 import Campaign from "../../models/Campaign";
 import ContactList from "../../models/ContactList";
 import Whatsapp from "../../models/Whatsapp";
+import { CampaignInput, canEditCampaign } from "../../helpers/CampaignAccess";
+import { createContactListFromTag } from "./ContactListFromTag";
 
-interface Data {
-  id: number | string;
-  name: string;
-  status: string;
-  scheduledAt: string;
-  companyId: number;
-  tagId: number | null;
-  contactListId: number;
-  message1?: string;
-  message2?: string;
-  message3?: string;
-  message4?: string;
-  message5?: string;
-  fileListId: number;
-}
+// O status vem do registro, não do corpo (antes o corpo dizia o status e
+// liberava editar uma campanha em andamento).
+const UpdateService = async (id: number | string, input: CampaignInput, companyId: number): Promise<Campaign> => {
+  const record = await Campaign.findOne({ where: { id, companyId } });
+  if (!record) throw new AppError("ERR_NO_CAMPAIGN_FOUND", 404);
+  if (!canEditCampaign(record)) throw new AppError("ERR_CAMPAIGN_NOT_EDITABLE", 400);
 
-const UpdateService = async (data: Data, companyId: number): Promise<Campaign> => {
-  const { id } = data;
-
-  const record = await Campaign.findByPk(id);
-
-  if (!record) {
-    throw new AppError("ERR_NO_CAMPAIGN_FOUND", 404);
+  let { contactListId } = input;
+  if (input.tagId && input.tagId !== record.tagId) {
+    contactListId = await createContactListFromTag(input.tagId, companyId, input.name, input.contactListId);
+  } else if (input.tagId) {
+    // Mesma tag: mantém a lista montada antes.
+    contactListId = record.contactListId;
   }
 
-  if (["INATIVA", "PROGRAMADA", "CANCELADA"].indexOf(data.status) === -1) {
-    throw new AppError(
-      "Só é permitido alterar campanha Inativa e Programada",
-      400
-    );
-  }
-
-  if (
-    data.scheduledAt != null &&
-    data.scheduledAt != "" &&
-    data.status === "INATIVA"
-  ) {
-    data.status = "PROGRAMADA";
-  }
-
-  if(record.tagId !== data.tagId) {
-    if (data.tagId && typeof data.contactListId !== 'number') {
-      const tagId = data.tagId;
-      const campanhaNome = data.name;
-
-      try {
-        const contactListId = await createContactListFromTag(tagId, companyId, campanhaNome);
-
-        data.contactListId = contactListId;
-        data.tagId = Number(data.tagId);
-      } catch (error) {
-        throw new AppError('Error creating contact list');
-      }
-    }
-
-    if (data.tagId && typeof data.contactListId === 'number') {
-      const tagId = data.tagId;
-      const campanhaNome = data.name;
-
-      try {
-        const contactListId = await createContactListFromTagAndContactList(tagId, data.contactListId, companyId, campanhaNome);
-
-        data.contactListId = contactListId;
-        data.tagId = Number(data.tagId);
-      } catch (error) {
-        throw new AppError('Error creating contact list');
-      }
-    }
-  }
-
-  await record.update(data);
+  const status = record.status === "CANCELADA" ? record.status : input.scheduledAt ? "PROGRAMADA" : "INATIVA";
+  await record.update({ ...input, contactListId, status });
 
   await record.reload({
-    include: [
-      { model: ContactList },
-      { model: Whatsapp, attributes: ["id", "name"] }
-    ]
+    include: [{ model: ContactList }, { model: Whatsapp, attributes: ["id", "name"] }]
   });
-
   return record;
 };
 

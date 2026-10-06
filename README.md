@@ -136,6 +136,7 @@ Já migrado:
 - configuração: Filas & Chatbot (com horários e opções do chatbot), Usuários, o Perfil no menu da conta,
   Conexões (com QR Code), Lista de arquivos, Integrações e Open.Ai.
 - colaboração: Chat Interno (com o popover do topo), Informativos (com o popover do topo) e Kanban.
+- campanhas: Campanhas (com relatório), Configurações de envio e Listas de Contatos (com importação de planilha).
 As demais telas aparecem no menu e abrem uma página "em migração" com link para a mesma tela no frontend atual.
 
 Diferenças em relação ao frontend atual:
@@ -162,6 +163,12 @@ Diferenças em relação ao frontend atual:
   mesmo com tags comuns). Mover troca só a tag de kanban (`PUT /ticket-tags/:ticketId/kanban`) e mantém
   as comuns. O atendente vê só os tickets dele e os pendentes das filas dele (`showAll` vale só para admin),
   só move esses tickets, e a tela e a API exigem o Kanban no plano.
+- Campanhas: a API exige campanhas no plano (ou `campaignsEnabled` da empresa); criar, editar, disparar,
+  configurar e importar listas é só para admin (o atendente só vê). A campanha só aceita conexão, lista,
+  tag e lista de arquivos da própria empresa; status, mídia e empresa nunca vêm do formulário. A mídia
+  fica em `public/campaigns/<id>/` (só imagem, vídeo, áudio ou PDF). A importação de contatos aceita
+  `.xlsx` e `.csv` (o `.xls` antigo não), lida pela `read-excel-file`, e a planilha é apagada do
+  servidor depois de importada (fica em `backend/private/imports` só durante a importação).
 
 `.env` (copie de `.env.example`; as variáveis `NEXT_PUBLIC_*` entram no build):
 ```
