@@ -5,12 +5,69 @@ O ConversaExpress é uma plataforma de atendimento via WhatsApp para equipes: ti
 ## 🚀 Começando
 
 O repositório possui 3 pastas:
-- **backend**: API em Express + TypeScript (Sequelize, Baileys, Bull, Socket.IO)
+- **backend**: API em Express + TypeScript (Sequelize, Baileys, BullMQ, Socket.IO)
 - **frontend**: interface em Next.js 16 + TypeScript + MUI 9
 - **instalador**: scripts para instalação automática em servidores Ubuntu (pm2 + nginx)
 
 A forma recomendada de implantar é com **[Docker](#-docker-recomendado)**. O instalador continua disponível
 (veja **[Implantação](#-implanta%C3%A7%C3%A3o-em-produ%C3%A7%C3%A3o)**).
+
+## 🧭 Modernização (2026)
+
+O projeto passou por uma revisão completa de segurança e por uma modernização da stack, feita em fases,
+cada uma em um PR revisado e com CI verde.
+
+**Stack atual**
+- **Backend:** Node.js 24, TypeScript 5.9, Express 4, Sequelize 6, BullMQ 6 (filas e agendadores no Redis),
+  Baileys 6.7.24 e Socket.IO 4.
+- **Frontend:** Next.js 16 (App Router, build standalone), React 19, MUI 9 e TypeScript, com a mesma marca e
+  as mesmas cores do frontend antigo (pt, en e es).
+- **Infraestrutura:** Postgres 17, Redis 7 e Docker Compose com Caddy (HTTPS automático). O instalador
+  (pm2 + nginx) continua disponível.
+- **CI (GitHub Actions):** backend (typecheck, testes e build), frontend (typecheck, lint, testes e build) e
+  Docker (validação dos compose e build das imagens).
+
+**Fases**
+
+| Fase | O que mudou | PR |
+| --- | --- | --- |
+| 0 e 1 | Higiene do repositório, CI e correção das vulnerabilidades críticas e altas | [#1](https://github.com/alexander-mattos/conversaexpress-v2/pull/1) |
+| 2a | Node 24, TypeScript 5.9 e dependências do backend atualizadas | [#2](https://github.com/alexander-mattos/conversaexpress-v2/pull/2) |
+| 2b | Sequelize 6 e sequelize-typescript 2 | [#3](https://github.com/alexander-mattos/conversaexpress-v2/pull/3) |
+| 2c | Filas no BullMQ com agendadores no Redis (e migração dos jobs do Bull) | [#4](https://github.com/alexander-mattos/conversaexpress-v2/pull/4) |
+| 2d | Baileys 6.7.24 sem o store em memória | [#5](https://github.com/alexander-mattos/conversaexpress-v2/pull/5) |
+| 3a | Novo frontend em Next.js: base, tema da marca, login, layout e Dashboard | [#6](https://github.com/alexander-mattos/conversaexpress-v2/pull/6) |
+| 3b | Atendimento: lista de tickets, notificações, conversa e painel do contato | [#7](https://github.com/alexander-mattos/conversaexpress-v2/pull/7), [#8](https://github.com/alexander-mattos/conversaexpress-v2/pull/8) |
+| 3c | Uso diário, filas e usuários, conexões e integrações, chat interno, informativos e Kanban | [#9](https://github.com/alexander-mattos/conversaexpress-v2/pull/9) a [#13](https://github.com/alexander-mattos/conversaexpress-v2/pull/13) |
+| 3d | Campanhas, Configurações, Financeiro (Pix), Assinatura e API de mensagens | [#14](https://github.com/alexander-mattos/conversaexpress-v2/pull/14) a [#16](https://github.com/alexander-mattos/conversaexpress-v2/pull/16) |
+| 3e | Cutover: o Next.js vira o único frontend (o antigo, em CRA, foi removido) | [#17](https://github.com/alexander-mattos/conversaexpress-v2/pull/17) |
+| 4 | Docker Compose para produção (com Caddy) e desenvolvimento | [#18](https://github.com/alexander-mattos/conversaexpress-v2/pull/18) |
+
+Cada tela migrada na Fase 3 trouxe junto a correção das falhas encontradas na API que ela usa.
+
+**Segurança: o que foi corrigido (por categoria)**
+- SQL injection em consultas montadas com texto do usuário.
+- Execução de comandos no servidor pelo processamento de mídia (ffmpeg).
+- Path traversal e uploads: cada tipo de arquivo tem pasta fixa, tipos permitidos e tamanho máximo;
+  planilhas ficam fora da pasta pública e são apagadas depois de importadas.
+- Isolamento entre empresas: registros de outra empresa (tickets, contatos, campanhas, listas, conexões,
+  faturas etc.) são recusados em todas as rotas, inclusive em filtros e IDs vindos do corpo.
+- Permissões por perfil (admin, atendente e super) e por recurso do plano, conferidas na API, e não só na tela.
+- Segredos (chave da OpenAI, tokens e credenciais de integrações) nunca voltam pela API, pelo socket ou no login.
+- URLs de integração não podem apontar para a rede interna do servidor (SSRF).
+- Autenticação: access token só em memória, refresh em cookie httpOnly, socket autenticado no handshake,
+  redefinição de senha com código de uso único e token da API de mensagens obrigatório.
+- Limite de tentativas em login, redefinição de senha, cadastro e API de mensagens.
+- Cobrança: o valor do Pix vem da fatura no banco, e o webhook confere o pagamento na Efí e não paga duas vezes.
+
+**Qualidade**
+- Testes de segurança no backend (Jest) e testes unitários no frontend (Vitest), rodando no CI.
+- Cada fase foi validada também com testes E2E (Playwright) contra o backend real.
+
+**Ao atualizar uma instalação antiga**
+- Rode as migrations (`npx sequelize db:migrate`), ou deixe o container do backend rodá-las.
+- Apague os arquivos `contatos_*.txt` antigos (veja [Implantação](#-implanta%C3%A7%C3%A3o-em-produ%C3%A7%C3%A3o)).
+- Numa instalação nova, troque a senha do `admin@admin.com` no primeiro acesso.
 
 ## 🐳 Docker (recomendado)
 
@@ -59,13 +116,13 @@ o backend reinicia sozinho (ts-node-dev) e o frontend usa o `next dev`. Os dados
 
 ### 📋 Pré-requisitos
 
+Para rodar sem Docker:
 ```
-- Node.js v24.x (LTS)
-- Postgres (release)
-- Npm ( latest )
-- Docker (bionic stable)
-- Redis
+- Node.js 24 (LTS) e npm
+- Postgres 13 ou mais novo
+- Redis 6 ou mais novo
 ```
+Com Docker, basta o Docker com o plugin compose (o Postgres 17 e o Redis 7 vêm no compose).
 
 ### 🔧 Instalação
 
@@ -306,7 +363,8 @@ pm2 save
 
 ## 🛠️ Construído com
 
-* [Express](https://expressjs.com/pt-br/) - O framework backend usado
+* [Express](https://expressjs.com/pt-br/), [Sequelize](https://sequelize.org/) e [BullMQ](https://docs.bullmq.io/) - Backend
+* [PostgreSQL](https://www.postgresql.org/) e [Redis](https://redis.io/) - Banco de dados e filas
 * [Next.js](https://nextjs.org/) e [MUI](https://mui.com/) - Frontend
 * [Docker](https://www.docker.com/) e [Caddy](https://caddyserver.com/) - Implantação
 * [Baileys](https://github.com/WhiskeySockets/Baileys) - Conexão com o WhatsApp
