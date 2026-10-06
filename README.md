@@ -6,7 +6,7 @@ O ConversaExpress é uma plataforma de atendimento via WhatsApp para equipes: ti
 
 O repositório possui 3 pastas:
 - **backend**: API em Express + TypeScript (Sequelize, Baileys, Bull, Socket.IO)
-- **frontend**: interface em React
+- **frontend**: interface em Next.js 16 + TypeScript + MUI 9
 - **instalador**: scripts para instalação automática em servidores Ubuntu
 
 Consulte **[Implantação](#-implanta%C3%A7%C3%A3o-em-produ%C3%A7%C3%A3o)** para saber como implantar o projeto.
@@ -81,10 +81,13 @@ GERENCIANET_PIX_KEY=chave pix gerencianet
 
 ```
 
-#### .env frontend
+#### .env.production frontend
+As variáveis `NEXT_PUBLIC_*` entram no build: se mudar a URL do backend, rode `npm run build` de novo.
+`PORT` é a porta usada pelo PM2 (`ecosystem.config.cjs`).
 ```
-REACT_APP_BACKEND_URL=${backend_url}
-REACT_APP_HOURS_CLOSE_TICKETS_AUTO = 24
+NEXT_PUBLIC_BACKEND_URL=${backend_url}
+NEXT_PUBLIC_HOURS_CLOSE_TICKETS_AUTO=24
+PORT=${frontend_port}
 ```
 
 #### Instalando dependências
@@ -103,30 +106,29 @@ npm run watch
 npm start
 
 cd frontend/
-npm start
+cp .env.example .env.local   # NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
+npm run dev                  # http://localhost:3000
 ```
 
 ## ✅ Verificações (CI)
 
 A cada push na `main` e em cada pull request, o GitHub Actions (`.github/workflows/ci.yml`) roda:
 - **backend**: `npm run typecheck`, `npm run test:unit` e `npm run build` (o `npm run lint` roda em modo informativo)
-- **frontend**: `npm run build`
-- **frontend-next**: `npm run typecheck`, `npm run lint`, `npm test` e `npm run build`
+- **frontend**: `npm run typecheck`, `npm run lint`, `npm test` e `npm run build`
 
 Para rodar localmente:
 ```
 cd backend/ && npm run typecheck && npm run test:unit && npm run build
-cd frontend/ && npm run build
-cd frontend-next/ && npm run typecheck && npm run lint && npm test && npm run build
+cd frontend/ && npm run typecheck && npm run lint && npm test && npm run build
 ```
 
-## 🧪 frontend-next (em migração)
+## 🖥️ Frontend (Next.js)
 
-`frontend-next/` é o novo frontend em Next.js 16 + TypeScript + MUI 9, migrado tela a tela.
-O `frontend/` atual continua sendo o oficial até a migração terminar.
+`frontend/` é o frontend em Next.js 16 + TypeScript + MUI 9, migrado tela a tela a partir do antigo frontend
+em React (CRA), que foi removido (continua no histórico do git).
 Cores e marca são as mesmas (`src/theme/tokens.ts`; o teste `src/__tests__/theme.test.ts` falha se elas mudarem).
 
-Já migrado:
+Telas:
 - login, cadastro, esqueci a senha, layout (menu e barra superior) e Dashboard;
 - atendimentos: lista de tickets (abas, filtros, busca, novo ticket), notificações com som,
   conversa (mensagens, envio de texto/arquivos/áudio/emoji, respostas rápidas, transferir, agendar, tags)
@@ -139,9 +141,9 @@ Já migrado:
 - campanhas: Campanhas (com relatório), Configurações de envio e Listas de Contatos (com importação de planilha).
 - Configurações: Opções, Horários da empresa e, para o super, Empresas, Planos e Ajuda.
 - Financeiro (faturas com pagamento por Pix), Assinatura e API de mensagens (documentação e testes de envio).
-As demais telas aparecem no menu e abrem uma página "em migração" com link para a mesma tela no frontend atual.
+Endereços que não existem abrem uma página 404 com a marca.
 
-Diferenças em relação ao frontend atual:
+Diferenças em relação ao frontend antigo:
 - o access token fica **só em memória**, nunca no `localStorage`;
 - ao recarregar a página, a sessão é renovada pelo cookie httpOnly de refresh;
 - o socket envia o token no `auth` do handshake, e não mais na URL.
@@ -182,27 +184,19 @@ Diferenças em relação ao frontend atual:
   passam a ter `token = null`; a migration converte os antigos `""`), exige a API externa no plano, valida
   número e texto e tem limite de 60 envios por minuto por token.
 
-`.env` (copie de `.env.example`; as variáveis `NEXT_PUBLIC_*` entram no build):
+Produção (servidor standalone, Node 24): `npm run build` gera `.next/standalone` e já copia `public/` e
+`.next/static` para dentro dele (`scripts/standalone-assets.mjs`).
 ```
-NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
-NEXT_PUBLIC_HOURS_CLOSE_TICKETS_AUTO=24
-# endereço do frontend atual, usado nos links das telas ainda não migradas
-NEXT_PUBLIC_LEGACY_URL=http://localhost:3000
-```
-
-Desenvolvimento e produção (servidor standalone, Node 24):
-```
-cd frontend-next/
-npm install
-npm run dev
-
+cd frontend/
+npm ci
 npm run build
-cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/
-PORT=3000 node .next/standalone/server.js
+PORT=3000 npm start                     # node .next/standalone/server.js
+# ou com PM2 (porta lida do .env.production):
+PM2_APP_NAME=empresa-frontend pm2 start ecosystem.config.cjs
 ```
 
-Para usar os dois frontends ao mesmo tempo (homologação), mantenha o `FRONTEND_URL` do backend no frontend atual
-e adicione o endereço do frontend-next em `FRONTEND_EXTRA_ORIGINS` (lista separada por vírgula, para CORS e socket).
+Para aceitar outro endereço de frontend (homologação, por exemplo), adicione-o em `FRONTEND_EXTRA_ORIGINS`
+no `.env` do backend (lista separada por vírgula, para CORS e socket).
 
 ## 📦 Implantação em produção
 
@@ -221,16 +215,31 @@ Atenção: é necessário acessar utilizando o usuário de deploy
 su - deploy
 ```
 
+**Saindo do frontend antigo (CRA):** a opção "atualizar" do instalador já faz a troca. Ela cria o
+`frontend/.env.production` a partir do `.env` e do `server.js` antigos (URL do backend e porta), apaga
+`build/`, `server.js` e `.env`, e registra o processo do PM2 com o `ecosystem.config.cjs`. Para fazer à mão:
 ```
 cd /home/deploy/${empresa_atualizar}
-pm2 stop ${empresa_atualizar}-frontend
+pm2 delete ${empresa_atualizar}-frontend
+git pull
+cd /home/deploy/${empresa_atualizar}/frontend
+# só na primeira vez (ajuste a URL do backend e a porta antigas):
+printf 'NEXT_PUBLIC_BACKEND_URL=%s\nNEXT_PUBLIC_HOURS_CLOSE_TICKETS_AUTO=24\nPORT=%s\n' https://api.seudominio.com 3000 > .env.production
+rm -rf build server.js .env
+npm ci
+npm run build
+PM2_APP_NAME=${empresa_atualizar}-frontend pm2 start ecosystem.config.cjs
+pm2 save
+```
+
+Nas atualizações seguintes:
+```
+cd /home/deploy/${empresa_atualizar}
 git pull
 cd /home/deploy/${empresa_atualizar}/frontend
 npm ci
-rm -rf build
 npm run build
-pm2 start ${empresa_atualizar}-frontend
-pm2 save
+pm2 restart ${empresa_atualizar}-frontend
 ```
 
 ```
@@ -251,7 +260,7 @@ pm2 save
 ## 🛠️ Construído com
 
 * [Express](https://expressjs.com/pt-br/) - O framework backend usado
-* [React](https://react.dev/) - Framework frontend usado
+* [Next.js](https://nextjs.org/) e [MUI](https://mui.com/) - Frontend
 * [Baileys](https://github.com/WhiskeySockets/Baileys) - Conexão com o WhatsApp
 * [NPM](https://www.npmjs.com/) - Gerenciador de dependências
 

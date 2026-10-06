@@ -56,13 +56,20 @@ frontend_update() {
 
   sudo su - deploy <<EOF
   cd /home/deploy/${empresa_atualizar}
-  pm2 stop ${empresa_atualizar}-frontend
+  pm2 delete ${empresa_atualizar}-frontend
   git pull
   cd /home/deploy/${empresa_atualizar}/frontend
+  # Instalações do frontend antigo (CRA): leva a URL do backend e a porta
+  # para o .env.production do Next e apaga o que não é mais usado.
+  if [ ! -f .env.production ] && [ -f .env ]; then
+    backend=\$(grep -E '^REACT_APP_BACKEND_URL=' .env | cut -d= -f2- | tr -d ' ')
+    port=\$(grep -oE 'listen\(([0-9]+)' server.js 2>/dev/null | grep -oE '[0-9]+')
+    printf 'NEXT_PUBLIC_BACKEND_URL=%s\nNEXT_PUBLIC_HOURS_CLOSE_TICKETS_AUTO=24\nPORT=%s\n' "\$backend" "\${port:-3000}" > .env.production
+  fi
+  rm -rf build server.js .env
   npm ci
-  rm -rf build
   npm run build
-  pm2 start ${empresa_atualizar}-frontend
+  PM2_APP_NAME=${empresa_atualizar}-frontend pm2 start ecosystem.config.cjs
   pm2 save
 EOF
 
@@ -87,27 +94,12 @@ frontend_set_env() {
   backend_url=${backend_url%%/*}
   backend_url=https://$backend_url
 
+# NEXT_PUBLIC_* entram no build: mudou a URL do backend, rode o build de novo.
 sudo su - deploy << EOF
-  cat <<[-]EOF > /home/deploy/${instancia_add}/frontend/.env
-REACT_APP_BACKEND_URL=${backend_url}
-REACT_APP_HOURS_CLOSE_TICKETS_AUTO = 24
-[-]EOF
-EOF
-
-  sleep 2
-
-sudo su - deploy << EOF
-  cat <<[-]EOF > /home/deploy/${instancia_add}/frontend/server.js
-//simple express server to run frontend production build;
-const express = require("express");
-const path = require("path");
-const app = express();
-app.use(express.static(path.join(__dirname, "build")));
-app.get("/*", function (req, res) {
-	res.sendFile(path.join(__dirname, "build", "index.html"));
-});
-app.listen(${frontend_port});
-
+  cat <<[-]EOF > /home/deploy/${instancia_add}/frontend/.env.production
+NEXT_PUBLIC_BACKEND_URL=${backend_url}
+NEXT_PUBLIC_HOURS_CLOSE_TICKETS_AUTO=24
+PORT=${frontend_port}
 [-]EOF
 EOF
 
@@ -128,7 +120,7 @@ frontend_start_pm2() {
 
   sudo su - deploy <<EOF
   cd /home/deploy/${instancia_add}/frontend
-  pm2 start server.js --name ${instancia_add}-frontend
+  PM2_APP_NAME=${instancia_add}-frontend pm2 start ecosystem.config.cjs
   pm2 save
 EOF
 

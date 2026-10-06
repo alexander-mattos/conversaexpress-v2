@@ -186,7 +186,11 @@ sleep 2
 
   sudo su - deploy <<EOF
   cd && cd /home/deploy/${empresa_dominio}/frontend
-  sed -i "1c\REACT_APP_BACKEND_URL=https://${alter_backend_url}" .env
+  sed -i "s|^NEXT_PUBLIC_BACKEND_URL=.*|NEXT_PUBLIC_BACKEND_URL=https://${alter_backend_url}|" .env.production
+  sed -i "s|^PORT=.*|PORT=${alter_frontend_port}|" .env.production
+  npm run build
+  PM2_APP_NAME=${empresa_dominio}-frontend pm2 startOrReload ecosystem.config.cjs --update-env
+  pm2 save
   cd && cd /home/deploy/${empresa_dominio}/backend
   sed -i "2c\BACKEND_URL=https://${alter_backend_url}" .env
   sed -i "3c\FRONTEND_URL=https://${alter_frontend_url}" .env 
