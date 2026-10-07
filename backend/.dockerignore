@@ -6,7 +6,6 @@ coverage
 !.env.example
 public
 private
-certs
 *.log
 Dockerfile
 .dockerignore

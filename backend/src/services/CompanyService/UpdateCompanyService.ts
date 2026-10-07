@@ -13,6 +13,7 @@ interface CompanyData {
   campaignsEnabled?: boolean;
   dueDate?: string;
   recurrence?: string;
+  document?: string | null;
 }
 
 const UpdateCompanyService = async (
@@ -27,7 +28,8 @@ const UpdateCompanyService = async (
     planId,
     campaignsEnabled,
     dueDate,
-    recurrence
+    recurrence,
+    document
   } = companyData;
 
   if (!company) {
@@ -45,7 +47,11 @@ const UpdateCompanyService = async (
     status,
     planId,
     dueDate,
-    recurrence
+    recurrence,
+    // Documento novo exige um cliente novo no Asaas.
+    ...(document !== undefined && document !== company.document
+      ? { document, asaasCustomerId: null }
+      : {})
   });
 
   if (companyData.campaignsEnabled !== undefined) {

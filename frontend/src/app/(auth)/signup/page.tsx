@@ -22,6 +22,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { openApi } from "@/lib/api";
 import { maskPhone } from "@/lib/phoneMask";
+import { formatCpfCnpj, isValidCpfCnpj, onlyDigits } from "@/lib/billing/cpfCnpj";
 import { toastError } from "@/lib/toastError";
 import logo from "@/assets/logo.png";
 
@@ -46,6 +47,7 @@ export default function SignupPage() {
         name: z.string().min(2, t("signup.formErrors.name.short")).max(50, t("signup.formErrors.name.long")),
         email: z.string().min(1, t("signup.formErrors.email.required")).email(t("signup.formErrors.email.invalid")),
         phone: z.string(),
+        document: z.string().refine(isValidCpfCnpj, t("signup.formErrors.document.invalid")),
         password: z
           .string()
           .min(1, t("signup.formErrors.password.required"))
@@ -64,7 +66,7 @@ export default function SignupPage() {
     formState: { errors, isSubmitting }
   } = useForm<SignupForm>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", email: "", phone: "", password: "", planId: "" }
+    defaultValues: { name: "", email: "", phone: "", document: "", password: "", planId: "" }
   });
 
   useEffect(() => {
@@ -76,7 +78,7 @@ export default function SignupPage() {
 
   const onSubmit = async (values: SignupForm) => {
     try {
-      await openApi.post("/companies/cadastro", values);
+      await openApi.post("/companies/cadastro", { ...values, document: onlyDigits(values.document) });
       toast.success(t("signup.toasts.success"));
       router.push("/login");
     } catch (err) {
@@ -125,6 +127,25 @@ export default function SignupPage() {
                     autoComplete="tel"
                     label={t("signup.form.phone")}
                     onChange={e => field.onChange(maskPhone(e.target.value))}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid size={12}>
+              <Controller
+                name="document"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    required
+                    fullWidth
+                    id="document"
+                    label={t("signup.form.document")}
+                    error={!!errors.document}
+                    helperText={errors.document?.message}
+                    onChange={e => field.onChange(formatCpfCnpj(e.target.value))}
+                    slotProps={{ htmlInput: { inputMode: "numeric" } }}
                   />
                 )}
               />

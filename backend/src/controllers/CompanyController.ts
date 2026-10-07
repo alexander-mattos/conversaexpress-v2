@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 import AppError from "../errors/AppError";
 import { parseQueueSchedules } from "../helpers/QueueSchedules";
 import { assertCompanyAccess } from "../helpers/CompanyAccess";
+import { parseDocument } from "../helpers/CpfCnpj";
 import Company from "../models/Company";
 import authConfig from "../config/auth";
 
@@ -44,6 +45,7 @@ type CompanyData = {
   campaignsEnabled?: boolean;
   dueDate?: string;
   recurrence?: string;
+  document?: string | null;
   password: string;
 };
 
@@ -75,7 +77,10 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     throw new AppError(err.message);
   }
 
-  const { company, generatedPassword } = await CreateCompanyService(newCompany);
+  const { company, generatedPassword } = await CreateCompanyService({
+    ...newCompany,
+    document: parseDocument(newCompany.document)
+  });
 
   return res.status(200).json({ ...company.toJSON(), generatedPassword });
 };
@@ -87,6 +92,8 @@ const SIGNUP_TRIAL_DAYS = Number(process.env.SIGNUP_TRIAL_DAYS || 3);
 // vencimento, status e recorrência são definidos pelo servidor.
 export const signup = async (req: Request, res: Response): Promise<Response> => {
   const { name, email, phone, password, planId } = req.body;
+  // CPF/CNPJ obrigatório: o Asaas só cobra clientes com documento.
+  const document = parseDocument(req.body.document, true);
 
   const schema = Yup.object().shape({
     name: Yup.string().min(2).max(50).required(),
@@ -119,6 +126,7 @@ export const signup = async (req: Request, res: Response): Promise<Response> => 
     email,
     phone,
     password,
+    document,
     planId: plan.id,
     status: true,
     campaignsEnabled: true,
@@ -162,7 +170,11 @@ export const update = async (
 
   const { id } = req.params;
 
-  const company = await UpdateCompanyService({ id, ...companyData });
+  const company = await UpdateCompanyService({
+    id,
+    ...companyData,
+    document: parseDocument(companyData.document)
+  });
 
   return res.status(200).json(company);
 };

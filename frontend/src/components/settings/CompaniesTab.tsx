@@ -28,6 +28,7 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import { api } from "@/lib/api";
+import { formatCpfCnpj, isValidCpfCnpj, onlyDigits } from "@/lib/billing/cpfCnpj";
 import { toastError } from "@/lib/toastError";
 import { RECURRENCES, addRecurrence, dueDateColor } from "@/lib/settings/settings";
 import { formatDateTime } from "@/lib/campaigns/campaigns";
@@ -42,6 +43,7 @@ interface Company {
   name: string;
   email?: string | null;
   phone?: string | null;
+  document?: string | null;
   planId?: number | null;
   plan?: Plan | null;
   status?: boolean;
@@ -56,6 +58,7 @@ interface Form {
   name: string;
   email: string;
   phone: string;
+  document: string;
   planId: string;
   status: boolean;
   campaignsEnabled: boolean;
@@ -63,13 +66,14 @@ interface Form {
   recurrence: string;
 }
 
-const emptyForm: Form = { name: "", email: "", phone: "", planId: "", status: true, campaignsEnabled: false, dueDate: "", recurrence: "" };
+const emptyForm: Form = { name: "", email: "", phone: "", document: "", planId: "", status: true, campaignsEnabled: false, dueDate: "", recurrence: "" };
 
 const toForm = (company: Company): Form => ({
   id: company.id,
   name: company.name ?? "",
   email: company.email ?? "",
   phone: company.phone ?? "",
+  document: company.document ? formatCpfCnpj(company.document) : "",
   planId: company.planId ? String(company.planId) : "",
   status: company.status !== false,
   campaignsEnabled: !!company.settings?.some(s => s.key === "campaignsEnabled" && s.value === "true"),
@@ -110,11 +114,16 @@ export default function CompaniesTab() {
       toast.error(t("settings.company.toasts.error"));
       return;
     }
+    if (form.document && !isValidCpfCnpj(form.document)) {
+      toast.error(t("backendErrors.ERR_INVALID_DOCUMENT"));
+      return;
+    }
     setSaving(true);
     const payload = {
       name: form.name.trim(),
       email: form.email.trim(),
       phone: form.phone.trim(),
+      document: onlyDigits(form.document),
       planId: Number(form.planId),
       status: form.status,
       campaignsEnabled: form.campaignsEnabled,
@@ -188,14 +197,24 @@ export default function CompaniesTab() {
       </Dialog>
 
       <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid size={{ xs: 12, md: 3 }}>
           <TextField label={t("settings.company.form.name")} fullWidth size="small" value={form.name} onChange={e => set("name", e.target.value)} />
         </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid size={{ xs: 12, md: 3 }}>
           <TextField label={t("settings.company.form.email")} fullWidth size="small" value={form.email} onChange={e => set("email", e.target.value)} />
         </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid size={{ xs: 12, md: 3 }}>
           <TextField label={t("settings.company.form.phone")} fullWidth size="small" value={form.phone} onChange={e => set("phone", e.target.value)} />
+        </Grid>
+        <Grid size={{ xs: 12, md: 3 }}>
+          <TextField
+            label={t("settings.company.form.document")}
+            fullWidth
+            size="small"
+            value={form.document}
+            onChange={e => set("document", formatCpfCnpj(e.target.value))}
+            slotProps={{ htmlInput: { inputMode: "numeric", "data-testid": "company-document" } }}
+          />
         </Grid>
         <Grid size={{ xs: 12, md: 2 }}>
           <FormControl fullWidth size="small">
@@ -285,6 +304,7 @@ export default function CompaniesTab() {
               <TableCell>{t("settings.company.form.name")}</TableCell>
               <TableCell>{t("settings.company.form.email")}</TableCell>
               <TableCell>{t("settings.company.form.phone")}</TableCell>
+              <TableCell>{t("settings.company.form.document")}</TableCell>
               <TableCell>{t("settings.company.form.plan")}</TableCell>
               <TableCell>{t("settings.company.form.campanhas")}</TableCell>
               <TableCell>{t("settings.company.form.status")}</TableCell>
@@ -305,6 +325,7 @@ export default function CompaniesTab() {
                   <TableCell>{company.name || "-"}</TableCell>
                   <TableCell>{company.email || "-"}</TableCell>
                   <TableCell>{company.phone || "-"}</TableCell>
+                  <TableCell>{company.document ? formatCpfCnpj(company.document) : "-"}</TableCell>
                   <TableCell>{company.plan?.name || "-"}</TableCell>
                   <TableCell>{campaigns ? t("settings.company.form.enabled") : t("settings.company.form.disabled")}</TableCell>
                   <TableCell>{company.status === false ? t("settings.company.form.no") : t("settings.company.form.yes")}</TableCell>

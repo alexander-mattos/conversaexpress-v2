@@ -15,6 +15,7 @@ interface CompanyData {
   campaignsEnabled?: boolean;
   dueDate?: string;
   recurrence?: string;
+  document?: string | null;
 }
 
 interface CreateCompanyResult {
@@ -35,6 +36,7 @@ const CreateCompanyService = async (
     campaignsEnabled,
     dueDate,
     recurrence,
+    document,
     password
   } = companyData;
 
@@ -71,7 +73,8 @@ const CreateCompanyService = async (
     status,
     planId,
     dueDate,
-    recurrence
+    recurrence,
+    document: document || null
   });
 
   const generatedPassword = password ? undefined : generatePassword();

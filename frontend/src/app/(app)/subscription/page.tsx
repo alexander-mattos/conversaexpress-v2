@@ -11,7 +11,7 @@ import { toastError } from "@/lib/toastError";
 import { daysUntil } from "@/lib/invoices/invoices";
 
 // Porta de frontend/src/pages/Subscription. "Assinar agora" leva às faturas,
-// onde cada uma é paga com Pix.
+// onde cada uma é paga pelo Asaas (Pix, boleto ou cartão).
 export default function SubscriptionPage() {
   const { t } = useTranslation();
   const router = useRouter();
