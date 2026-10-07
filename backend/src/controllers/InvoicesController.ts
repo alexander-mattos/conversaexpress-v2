@@ -2,7 +2,7 @@ import * as Yup from "yup";
 import { Request, Response } from "express";
 // import { getIO } from "../libs/socket";
 import AppError from "../errors/AppError";
-import { assertCompanyAccess } from "../helpers/CompanyAccess";
+import { assertCompanyAccess, isSuperUser, resolveCompanyId } from "../helpers/CompanyAccess";
 import Invoices from "../models/Invoices";
 
 import CreatePlanService from "../services/PlanService/CreatePlanService";
@@ -56,7 +56,15 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
 
 
 export const list = async (req: Request, res: Response): Promise<Response> => {
-  const { companyId } = req.user;
+  // O super vê as faturas de todas as empresas (ou de uma, com ?companyId=);
+  // os demais, só as da própria empresa.
+  const requested = req.query.companyId as string | undefined;
+  let companyId: number | undefined;
+  if (requested) {
+    companyId = await resolveCompanyId(requested, req.user);
+  } else {
+    companyId = (await isSuperUser(req.user.id)) ? undefined : req.user.companyId;
+  }
   const invoice: Invoices[] = await FindAllInvoiceService(companyId);
 
   return res.status(200).json(invoice);

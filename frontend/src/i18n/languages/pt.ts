@@ -22,6 +22,9 @@ const messages = {
           password: "Senha",
         },
         formErrors: {
+          phone: {
+            invalid: "Informe o telefone com DDD",
+          },
           document: {
             invalid: "CPF ou CNPJ inválido",
           },
@@ -224,6 +227,8 @@ const messages = {
           invalidDocument: "CPF ou CNPJ inválido",
         },
         title: "Faturas",
+        company: "Empresa",
+        allCompanies: "Todas as empresas",
         paid: "Pago",
         open: "Em Aberto",
         expired: "Vencido",
@@ -1721,6 +1726,7 @@ const messages = {
         ERR_BILLING_NOT_CONFIGURED: "A cobrança ainda não foi configurada. Fale com o suporte.",
         ERR_BILLING_PROVIDER: "Não foi possível gerar a cobrança no Asaas. Tente novamente em instantes.",
         ERR_INVALID_DOCUMENT: "CPF ou CNPJ inválido.",
+        ERR_INVALID_PHONE: "Informe um telefone válido, com DDD.",
         ERR_DOCUMENT_REQUIRED: "Informe o CPF ou CNPJ da empresa para gerar a cobrança.",
         ERR_TOO_MANY_REQUESTS: "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
         ERR_INTERNAL_SERVER_ERROR:

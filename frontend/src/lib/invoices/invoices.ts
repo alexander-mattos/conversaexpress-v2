@@ -4,7 +4,16 @@ export interface Invoice {
   value: number;
   dueDate: string;
   status: string;
+  companyId?: number;
+  company?: { id: number; name: string } | null;
 }
+
+// Empresas que aparecem nas faturas (filtro do super), em ordem alfabética.
+export const invoiceCompanies = (invoices: Invoice[]): { id: number; name: string }[] => {
+  const map = new Map<number, string>();
+  invoices.forEach(i => i.company && map.set(i.company.id, i.company.name));
+  return [...map.entries()].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+};
 
 const day = (value: string | Date) => {
   const date = new Date(value);

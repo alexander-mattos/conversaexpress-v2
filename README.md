@@ -85,6 +85,9 @@ docker compose up -d --build
 - Na primeira subida, o backend roda as migrations, cria a empresa padrão e o usuário
   `admin@admin.com` / `123456` (**troque a senha no primeiro acesso**) e migra as filas antigas do Bull.
   Nas seguintes, só as migrations novas. `RUN_MIGRATIONS=false` desliga esse passo.
+- Boas-vindas: ao criar uma empresa (cadastro público ou Configurações → Empresas), o sistema envia
+  e-mail (se `MAIL_*` estiver preenchido) e WhatsApp pela conexão padrão da empresa `PLATFORM_COMPANY_ID`
+  (padrão 1), com login, link e plano. A senha só vai quando foi gerada pelo sistema.
 - Cobrança das empresas pelo Asaas (Pix, boleto e cartão): preencha `ASAAS_API_KEY` e `ASAAS_WEBHOOK_TOKEN`
   (`ASAAS_SANDBOX=true` para testar). No painel do Asaas, em Integrações → Webhooks, cadastre
   `https://<BACKEND_DOMAIN>/subscription/webhook` com o mesmo token e os eventos de cobrança.

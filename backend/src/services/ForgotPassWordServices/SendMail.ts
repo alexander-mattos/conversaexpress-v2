@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import { sendMail } from "../../helpers/Mail";
 import { QueryTypes } from "sequelize";
 import database from "../../database";
 import { logger } from "../../utils/logger";
@@ -20,18 +20,9 @@ const SendMail = async (email: string): Promise<void> => {
   const tokenSenha = generateResetToken();
   await saveToken(user.id, buildStoredToken(tokenSenha));
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.MAIL_HOST,
-    port: Number(process.env.MAIL_PORT),
-    secure: true,
-    auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS }
-  });
-  const fromEmail = process.env.MAIL_FROM;
-
   async function sendEmail() {
       try {
-        const mailOptions = {
-          from: fromEmail,
+        await sendMail({
           to: email,
           subject: "Redefinição de Senha - ConversaExpress",
           html: ` <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -220,8 +211,7 @@ a[x-apple-data-detectors] {
   </div>
  </body>
 </html>`
-        };
-        await transporter.sendMail(mailOptions);
+        });
       } catch (error) {
         logger.error(error, "Erro ao enviar e-mail de redefinição de senha");
       }

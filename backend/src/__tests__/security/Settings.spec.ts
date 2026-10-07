@@ -23,6 +23,7 @@ jest.mock("../../models/Company", () => ({ __esModule: true, default: { findByPk
 jest.mock("../../models/Plan", () => ({ __esModule: true, default: { findByPk: planFindByPk } }));
 jest.mock("../../services/CompanyService/UpdateSchedulesService", () => ({ __esModule: true, default: updateSchedules }));
 jest.mock("../../services/InvoicesService/UpdateInvoiceService", () => ({ __esModule: true, default: updateInvoice }));
+jest.mock("../../services/CompanyService/SendWelcomeService", () => ({ __esModule: true, default: jest.fn() }));
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 const SettingController = require("../../controllers/SettingController");

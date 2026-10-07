@@ -46,7 +46,7 @@ export default function SignupPage() {
       z.object({
         name: z.string().min(2, t("signup.formErrors.name.short")).max(50, t("signup.formErrors.name.long")),
         email: z.string().min(1, t("signup.formErrors.email.required")).email(t("signup.formErrors.email.invalid")),
-        phone: z.string(),
+        phone: z.string().refine(v => v.replace(/\D/g, "").length >= 10, t("signup.formErrors.phone.invalid")),
         document: z.string().refine(isValidCpfCnpj, t("signup.formErrors.document.invalid")),
         password: z
           .string()
@@ -122,10 +122,13 @@ export default function SignupPage() {
                 render={({ field }) => (
                   <TextField
                     {...field}
+                    required
                     fullWidth
                     id="phone"
                     autoComplete="tel"
                     label={t("signup.form.phone")}
+                    error={!!errors.phone}
+                    helperText={errors.phone?.message}
                     onChange={e => field.onChange(maskPhone(e.target.value))}
                   />
                 )}
