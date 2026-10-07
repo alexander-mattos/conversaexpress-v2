@@ -1,6 +1,12 @@
 const messages = {
   pt: {
     translations: {
+      trialBanner: {
+        daysLeft_one: "Seu período de teste termina em {{count}} dia ({{date}}).",
+        daysLeft_other: "Seu período de teste termina em {{count}} dias ({{date}}).",
+        lastDay: "Hoje é o último dia do seu período de teste ({{date}}). Gere o pagamento para continuar usando o sistema.",
+        pay: "Ir para o Financeiro",
+      },
       notFound: {
         title: "Página não encontrada",
         message: "O endereço que você abriu não existe ou foi movido.",

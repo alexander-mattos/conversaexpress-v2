@@ -1,6 +1,12 @@
 const messages = {
 	en: {
 		translations: {
+			trialBanner: {
+				daysLeft_one: "Your trial ends in {{count}} day ({{date}}).",
+				daysLeft_other: "Your trial ends in {{count}} days ({{date}}).",
+				lastDay: "Today is the last day of your trial ({{date}}). Generate the payment to keep using the system.",
+				pay: "Go to Billing",
+			},
 			notFound: {
 				title: "Page not found",
 				message: "The address you opened does not exist or has been moved.",
