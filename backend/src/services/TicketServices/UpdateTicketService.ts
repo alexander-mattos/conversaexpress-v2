@@ -19,6 +19,7 @@ import Whatsapp from "../../models/Whatsapp";
 import { Op } from "sequelize";
 import AppError from "../../errors/AppError";
 import Company from "../../models/Company";
+import { contactJid } from "../../helpers/WhatsAppJid";
 
 interface TicketData {
   status?: string;
@@ -187,7 +188,7 @@ const UpdateTicketService = async ({
         }
 
         const queueChangedMessage = await wbot.sendMessage(
-          `${ticket.contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`,
+          contactJid(ticket.contact, ticket.isGroup),
           {
             text: translatedMessage[language]
           }
@@ -209,7 +210,7 @@ const UpdateTicketService = async ({
           }
 
           const queueChangedMessage = await wbot.sendMessage(
-            `${ticket.contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`,
+            contactJid(ticket.contact, ticket.isGroup),
             {
               text: translatedMessage[language]
             }
@@ -232,7 +233,7 @@ const UpdateTicketService = async ({
             }
 
             const queueChangedMessage = await wbot.sendMessage(
-              `${ticket.contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`,
+              contactJid(ticket.contact, ticket.isGroup),
               {
                 text: translatedMessage[language]
               }
@@ -252,7 +253,7 @@ const UpdateTicketService = async ({
               }
 
               const queueChangedMessage = await wbot.sendMessage(
-                `${ticket.contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`,
+                contactJid(ticket.contact, ticket.isGroup),
                 {
                   text: translatedMessage[language]
                 }
