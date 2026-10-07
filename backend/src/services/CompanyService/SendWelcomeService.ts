@@ -36,8 +36,14 @@ const sendWhatsApp = async (phone: string | null | undefined, text: string): Pro
     logger.warn(`Boas-vindas: o número ${number} não tem WhatsApp`);
     return;
   }
-  await SendMessage(whatsapp, { number: String(found.jid).split("@")[0], body: text });
+  const to = String(found.jid).split("@")[0];
+  await SendMessage(whatsapp, { number: to, body: text });
+  logger.info(`Boas-vindas: WhatsApp enviado para ${to} pela conexão ${whatsapp.id}`);
 };
+
+// Motivo da falha sem dados sensíveis (o nodemailer traz code/responseCode).
+const reason = (err: any): string =>
+  [err?.code, err?.responseCode, err?.message].filter(Boolean).join(" ") || String(err);
 
 // Boas-vindas por e-mail e WhatsApp. Nunca lança: falhas só vão para o log,
 // para não atrapalhar o cadastro.
@@ -57,7 +63,11 @@ const SendWelcomeService = async ({ company, plan, password }: Request): Promise
 
   const jobs: Promise<void>[] = [];
   if (company.email && isMailConfigured()) {
-    jobs.push(sendMail({ to: company.email, subject: "Bem-vindo(a) ao ConversaExpress", html: welcomeHtml(data) }));
+    jobs.push(
+      sendMail({ to: company.email, subject: "Bem-vindo(a) ao ConversaExpress", html: welcomeHtml(data) }).then(() =>
+        logger.info(`Boas-vindas: e-mail enviado para ${company.email}`)
+      )
+    );
   } else {
     logger.info("Boas-vindas: e-mail não configurado (MAIL_*) ou empresa sem e-mail");
   }
@@ -65,7 +75,7 @@ const SendWelcomeService = async ({ company, plan, password }: Request): Promise
 
   const results = await Promise.allSettled(jobs);
   results.forEach(r => {
-    if (r.status === "rejected") logger.warn(`Boas-vindas da empresa ${company.id}: ${r.reason?.message || r.reason}`);
+    if (r.status === "rejected") logger.warn(`Boas-vindas da empresa ${company.id}: falhou (${reason(r.reason)})`);
   });
 };
 

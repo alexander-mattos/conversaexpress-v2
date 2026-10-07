@@ -12,6 +12,10 @@ jest.mock("../../libs/wbot", () => ({ getWbot: () => ({ onWhatsApp }) }));
 jest.mock("../../helpers/SendMessage", () => ({ SendMessage: sendMessage }));
 jest.mock("../../models/Company", () => ({ __esModule: true, default: {} }));
 jest.mock("../../models/Plan", () => ({ __esModule: true, default: {} }));
+const logs: string[] = [];
+jest.mock("../../utils/logger", () => ({
+  logger: { info: (m: string) => logs.push(`info ${m}`), warn: (m: string) => logs.push(`warn ${m}`), error: jest.fn() }
+}));
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 const { welcomeText, welcomeHtml, whatsappNumber } = require("../../helpers/WelcomeMessage");
@@ -63,6 +67,7 @@ describe("SendWelcomeService", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    logs.length = 0;
     process.env.FRONTEND_URL = "https://app.exemplo.com/";
     isMailConfigured.mockReturnValue(true);
     sendMail.mockResolvedValue(undefined);
@@ -79,6 +84,10 @@ describe("SendWelcomeService", () => {
     expect(onWhatsApp).toHaveBeenCalledWith("5511999998888@s.whatsapp.net");
     expect(sendMessage.mock.calls[0][1].number).toBe("551199998888");
     expect(sendMessage.mock.calls[0][1].body).not.toMatch(/Senha/);
+    expect(logs).toEqual(expect.arrayContaining([
+      "info Boas-vindas: e-mail enviado para dono@loja.com",
+      "info Boas-vindas: WhatsApp enviado para 551199998888 pela conexão 1"
+    ]));
   });
 
   it("sem MAIL_* não envia e-mail; sem telefone não envia WhatsApp", async () => {
@@ -89,9 +98,10 @@ describe("SendWelcomeService", () => {
   });
 
   it("falhas no e-mail, sem conexão ou número sem WhatsApp nunca lançam", async () => {
-    sendMail.mockRejectedValue(new Error("smtp fora"));
+    sendMail.mockRejectedValue(Object.assign(new Error("Invalid login"), { code: "EAUTH", responseCode: 535 }));
     getDefaultWhatsApp.mockRejectedValue(new Error("sem conexão"));
     await expect(SendWelcomeService({ company, plan, password: "x" })).resolves.toBeUndefined();
+    expect(logs).toContain("warn Boas-vindas da empresa 9: falhou (EAUTH 535 Invalid login)");
 
     getDefaultWhatsApp.mockResolvedValue({ id: 1 });
     onWhatsApp.mockResolvedValue([]);
