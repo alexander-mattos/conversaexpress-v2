@@ -8,6 +8,7 @@ import Ticket from "../../models/Ticket";
 
 import formatBody from "../../helpers/Mustache";
 import { contactJid } from "../../helpers/WhatsAppJid";
+import { logger } from "../../utils/logger";
 
 interface Request {
   body: string;
@@ -55,11 +56,22 @@ const SendWhatsAppMessage = async ({
       }
     );
 
+    // Diagnóstico temporário (LID): destino calculado e chave devolvida.
+    logger.info(
+      `[LID] envio texto ticket=${ticket.id} destino=${number} ` +
+        `number=${ticket.contact?.number} lid=${ticket.contact?.lid} ` +
+        `msgId=${sentMessage?.key?.id} remoteJid=${sentMessage?.key?.remoteJid}`
+    );
+
     await ticket.update({ lastMessage: formatBody(body, ticket.contact) });
     return sentMessage;
   } catch (err) {
     Sentry.captureException(err);
-    console.log(err);
+    logger.error(
+      `[LID] falha envio texto ticket=${ticket.id} destino=${number}: ${
+        (err as Error)?.stack || err
+      }`
+    );
     throw new AppError("ERR_SENDING_WAPP_MSG");
   }
 };
