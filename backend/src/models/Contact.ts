@@ -34,6 +34,10 @@ class Contact extends Model {
   @Column
   number: string;
 
+  // ID interno do WhatsApp (xxxx@lid), quando o contato chega assim.
+  @Column
+  lid: string;
+
   @AllowNull(false)
   @Default("")
   @Column
