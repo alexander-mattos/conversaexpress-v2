@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Paper, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
-import PixPaymentDialog from "@/components/invoices/PixPaymentDialog";
+import PaymentDialog from "@/components/invoices/PaymentDialog";
 import { MainContainer, MainHeader, TableRowSkeleton, Title, mainPaperSx } from "@/components/page/PageLayout";
 import { api } from "@/lib/api";
 import { toastError } from "@/lib/toastError";
@@ -34,7 +34,7 @@ export default function FinanceiroPage() {
 
   return (
     <MainContainer>
-      <PixPaymentDialog invoice={paying} onClose={() => setPaying(null)} onPaid={reload} />
+      <PaymentDialog invoice={paying} onClose={() => setPaying(null)} onPaid={reload} />
       <MainHeader>
         <Title>{t("invoices.title")}</Title>
       </MainHeader>

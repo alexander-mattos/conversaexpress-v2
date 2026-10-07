@@ -18,7 +18,7 @@ COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --chown=node:node docker ./docker
 # Mídias enviadas, planilhas em importação e certificados (volumes no compose).
-RUN mkdir -p public private/imports certs && chown -R node:node public private certs
+RUN mkdir -p public private/imports && chown -R node:node public private
 USER node
 EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=5 \

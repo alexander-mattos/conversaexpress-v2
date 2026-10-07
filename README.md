@@ -58,7 +58,7 @@ Cada tela migrada na Fase 3 trouxe junto a correção das falhas encontradas na 
 - Autenticação: access token só em memória, refresh em cookie httpOnly, socket autenticado no handshake,
   redefinição de senha com código de uso único e token da API de mensagens obrigatório.
 - Limite de tentativas em login, redefinição de senha, cadastro e API de mensagens.
-- Cobrança: o valor do Pix vem da fatura no banco, e o webhook confere o pagamento na Efí e não paga duas vezes.
+- Cobrança (Asaas): o valor vem da fatura no banco, e o webhook exige o token, confere o pagamento no Asaas e não paga duas vezes.
 
 **Qualidade**
 - Testes de segurança no backend (Jest) e testes unitários no frontend (Vitest), rodando no CI.
@@ -85,7 +85,9 @@ docker compose up -d --build
 - Na primeira subida, o backend roda as migrations, cria a empresa padrão e o usuário
   `admin@admin.com` / `123456` (**troque a senha no primeiro acesso**) e migra as filas antigas do Bull.
   Nas seguintes, só as migrations novas. `RUN_MIGRATIONS=false` desliga esse passo.
-- Certificado Pix da Efí: coloque o `.p12` em `backend/certs/` e preencha `GERENCIANET_PIX_CERT` (nome sem extensão).
+- Cobrança das empresas pelo Asaas (Pix, boleto e cartão): preencha `ASAAS_API_KEY` e `ASAAS_WEBHOOK_TOKEN`
+  (`ASAAS_SANDBOX=true` para testar). No painel do Asaas, em Integrações → Webhooks, cadastre
+  `https://<BACKEND_DOMAIN>/subscription/webhook` com o mesmo token e os eventos de cobrança.
 - Logs: `docker compose logs -f backend`. Estado: `docker compose ps` (todos os serviços têm healthcheck).
 
 Atualizar:
@@ -170,11 +172,9 @@ USER_LIMIT=${max_user}
 CONNECTIONS_LIMIT=${max_whats}
 CLOSED_SEND_BY_ME=true
 
-GERENCIANET_SANDBOX=false
-GERENCIANET_CLIENT_ID=Client_Id_Gerencianet
-GERENCIANET_CLIENT_SECRET=Client_Secret_Gerencianet
-GERENCIANET_PIX_CERT=certificado-Gerencianet
-GERENCIANET_PIX_KEY=chave pix gerencianet
+ASAAS_API_KEY=
+ASAAS_SANDBOX=false
+ASAAS_WEBHOOK_TOKEN=
 
 # EMAIL
  MAIL_HOST="smtp.gmail.com"

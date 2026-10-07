@@ -28,11 +28,9 @@ x-backend-env: &backend-env
   USER_LIMIT: ${USER_LIMIT:-10000}
   CONNECTIONS_LIMIT: ${CONNECTIONS_LIMIT:-100000}
   CLOSED_SEND_BY_ME: ${CLOSED_SEND_BY_ME:-true}
-  GERENCIANET_SANDBOX: ${GERENCIANET_SANDBOX:-false}
-  GERENCIANET_CLIENT_ID: ${GERENCIANET_CLIENT_ID:-}
-  GERENCIANET_CLIENT_SECRET: ${GERENCIANET_CLIENT_SECRET:-}
-  GERENCIANET_PIX_CERT: ${GERENCIANET_PIX_CERT:-}
-  GERENCIANET_PIX_KEY: ${GERENCIANET_PIX_KEY:-}
+  ASAAS_API_KEY: ${ASAAS_API_KEY:-}
+  ASAAS_SANDBOX: ${ASAAS_SANDBOX:-false}
+  ASAAS_WEBHOOK_TOKEN: ${ASAAS_WEBHOOK_TOKEN:-}
   MAIL_HOST: ${MAIL_HOST:-}
   MAIL_USER: ${MAIL_USER:-}
   MAIL_PASS: ${MAIL_PASS:-}
@@ -85,8 +83,6 @@ services:
       # Mídias de mensagens, campanhas e arquivos.
       - backend_public:/app/public
       - backend_private:/app/private
-      # Certificado .p12 da Efí (GERENCIANET_PIX_CERT=nome sem extensão).
-      - ./backend/certs:/app/certs:ro
 
   frontend:
     build:

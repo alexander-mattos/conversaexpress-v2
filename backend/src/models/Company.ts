@@ -49,6 +49,12 @@ class Company extends Model {
   recurrence: string;
 
   @Column
+  document: string;
+
+  @Column
+  asaasCustomerId: string;
+
+  @Column
   language: string;
 
   @Column({
