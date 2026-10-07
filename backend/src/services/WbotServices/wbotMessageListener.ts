@@ -1795,20 +1795,6 @@ const handleMessage = async (
     const whatsapp = await ShowWhatsAppService(wbot.id!, companyId);
     const contact = await verifyContact(msgContact, wbot, companyId);
 
-    // Diagnóstico temporário (LID): identificadores recebidos e contato salvo.
-    const k = msg.key as any;
-    if (
-      String(k.remoteJid || "").endsWith("@lid") ||
-      String(k.participant || "").endsWith("@lid")
-    ) {
-      logger.info(
-        `[LID] recebida remoteJid=${k.remoteJid} participant=${k.participant} ` +
-          `senderPn=${k.senderPn} senderLid=${k.senderLid} ` +
-          `participantPn=${k.participantPn} participantLid=${k.participantLid} ` +
-          `fromMe=${k.fromMe} -> contato id=${contact.id} number=${contact.number} lid=${contact.lid}`
-      );
-    }
-
     let unreadMessages = 0;
 
     if (msg.key.fromMe) {
@@ -2322,14 +2308,6 @@ const wbotMessageListener = async (
       if (messageUpdate.length === 0) return;
       messageUpdate.forEach(async (message: WAMessageUpdate) => {
         (wbot as WASocket)!.readMessages([message.key]);
-
-        // Diagnóstico temporário (LID): status das mensagens enviadas.
-        if (message.key.fromMe) {
-          logger.info(
-            `[LID] status msgId=${message.key.id} remoteJid=${message.key.remoteJid} ` +
-              `update=${JSON.stringify(message.update)}`
-          );
-        }
 
         handleMsgAck(message, message.update.status);
       });

@@ -10,7 +10,6 @@ import Ticket from "../../models/Ticket";
 import { lookup } from "mime-types";
 import formatBody from "../../helpers/Mustache";
 import { contactJid } from "../../helpers/WhatsAppJid";
-import { logger } from "../../utils/logger";
 
 interface Request {
   media: Express.Multer.File;
@@ -189,19 +188,12 @@ const SendWhatsAppMedia = async ({
       }
     );
 
-    // Diagnóstico temporário (LID): destino calculado e chave devolvida.
-    logger.info(
-      `[LID] envio midia ticket=${ticket.id} destino=${contactJid(ticket.contact, ticket.isGroup)} ` +
-        `number=${ticket.contact?.number} lid=${ticket.contact?.lid} ` +
-        `msgId=${sentMessage?.key?.id} remoteJid=${sentMessage?.key?.remoteJid}`
-    );
-
     await ticket.update({ lastMessage: bodyMessage });
 
     return sentMessage;
   } catch (err) {
     Sentry.captureException(err);
-    logger.error(`[LID] falha envio midia ticket=${ticket.id}: ${(err as Error)?.stack || err}`);
+    console.log(err);
     throw new AppError("ERR_SENDING_WAPP_MSG");
   }
 };
