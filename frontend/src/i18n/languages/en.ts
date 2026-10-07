@@ -22,6 +22,9 @@ const messages = {
 					password: "Password",
 				},
 				formErrors: {
+					phone: {
+						invalid: "Enter the phone number with area code",
+					},
 					document: {
 						invalid: "Invalid CPF or CNPJ",
 					},
@@ -222,6 +225,8 @@ const messages = {
 					invalidDocument: "Invalid CPF or CNPJ",
 				},
 				title: "Invoices",
+				company: "Company",
+				allCompanies: "All companies",
 				paid: "Paid",
 				open: "Open",
 				expired: "Expired",
@@ -1692,6 +1697,7 @@ const messages = {
 				ERR_BILLING_NOT_CONFIGURED: "Billing is not configured yet. Contact support.",
 				ERR_BILLING_PROVIDER: "Could not create the charge at Asaas. Please try again shortly.",
 				ERR_INVALID_DOCUMENT: "Invalid CPF or CNPJ.",
+				ERR_INVALID_PHONE: "Enter a valid phone number with area code.",
 				ERR_DOCUMENT_REQUIRED: "Enter the company's CPF or CNPJ to generate the charge.",
 				ERR_TOO_MANY_REQUESTS: "Too many attempts. Please wait a few minutes and try again.",
 				ERR_INTERNAL_SERVER_ERROR: "An unexpected error occurred. Please try again later",

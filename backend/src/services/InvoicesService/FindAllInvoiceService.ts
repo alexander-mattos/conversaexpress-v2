@@ -1,17 +1,14 @@
 import Invoices from "../../models/Invoices";
+import Company from "../../models/Company";
 
-interface Request {
-  companyId: number;
-}
-
-const FindAllPlanService = async (companyId: number): Promise<Invoices[]> => {
+// companyId undefined = todas as empresas (só o super chega aqui assim).
+const FindAllInvoiceService = async (companyId?: number): Promise<Invoices[]> => {
   const invoice = await Invoices.findAll({
-    where: {
-      companyId
-    }, 
+    where: companyId === undefined ? {} : { companyId },
+    include: [{ model: Company, as: "company", attributes: ["id", "name"] }],
     order: [["id", "ASC"]]
   });
   return invoice;
 };
 
-export default FindAllPlanService;
+export default FindAllInvoiceService;

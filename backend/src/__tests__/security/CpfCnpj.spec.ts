@@ -27,6 +27,7 @@ describe("CPF/CNPJ", () => {
 describe("cadastro público exige CPF/CNPJ", () => {
   const createCompany = jest.fn();
   beforeAll(() => {
+    jest.doMock("../../services/CompanyService/SendWelcomeService", () => ({ __esModule: true, default: jest.fn().mockResolvedValue(undefined) }));
     jest.doMock("../../config/auth", () => ({ __esModule: true, default: { secret: "s", refreshSecret: "r" } }));
     jest.doMock("../../services/CompanyService/CreateCompanyService", () => ({ __esModule: true, default: createCompany }));
     jest.doMock("../../models/Plan", () => ({ __esModule: true, default: { findByPk: jest.fn().mockResolvedValue({ id: 1 }) } }));
@@ -36,9 +37,11 @@ describe("cadastro público exige CPF/CNPJ", () => {
   it("sem documento ou inválido é 400; válido segue só com dígitos", async () => {
     const { signup } = require("../../controllers/CompanyController");
     const res: any = { status: jest.fn(() => res), json: jest.fn(() => res) };
-    const body = { name: "Empresa", email: "a@b.com", password: "12345678", planId: 1 };
+    const body = { name: "Empresa", email: "a@b.com", phone: "(11) 99999-8888", password: "12345678", planId: 1 };
     await expect(signup({ body }, res)).rejects.toMatchObject({ statusCode: 400, message: "ERR_INVALID_DOCUMENT" });
     await expect(signup({ body: { ...body, document: "123" } }, res)).rejects.toMatchObject({ statusCode: 400 });
+    await expect(signup({ body: { ...body, document: "52998224725", phone: "" } }, res)).rejects.toMatchObject({ statusCode: 400, message: "ERR_INVALID_PHONE" });
+    await expect(signup({ body: { ...body, document: "52998224725", phone: "1234" } }, res)).rejects.toMatchObject({ statusCode: 400 });
     expect(createCompany).not.toHaveBeenCalled();
 
     createCompany.mockResolvedValue({ company: { id: 3, name: "Empresa" } });

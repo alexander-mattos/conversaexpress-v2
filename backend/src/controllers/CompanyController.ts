@@ -5,6 +5,8 @@ import AppError from "../errors/AppError";
 import { parseQueueSchedules } from "../helpers/QueueSchedules";
 import { assertCompanyAccess } from "../helpers/CompanyAccess";
 import { parseDocument } from "../helpers/CpfCnpj";
+import { whatsappNumber } from "../helpers/WelcomeMessage";
+import SendWelcomeService from "../services/CompanyService/SendWelcomeService";
 import Company from "../models/Company";
 import authConfig from "../config/auth";
 
@@ -82,6 +84,11 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     document: parseDocument(newCompany.document)
   });
 
+  // Sem await: as boas-vindas não atrasam nem derrubam o cadastro.
+  Plan.findByPk(company.planId)
+    .then(plan => SendWelcomeService({ company, plan, password: generatedPassword }))
+    .catch(() => undefined);
+
   return res.status(200).json({ ...company.toJSON(), generatedPassword });
 };
 
@@ -94,6 +101,10 @@ export const signup = async (req: Request, res: Response): Promise<Response> => 
   const { name, email, phone, password, planId } = req.body;
   // CPF/CNPJ obrigatório: o Asaas só cobra clientes com documento.
   const document = parseDocument(req.body.document, true);
+  // Telefone obrigatório: as boas-vindas também vão por WhatsApp.
+  if (!whatsappNumber(phone)) {
+    throw new AppError("ERR_INVALID_PHONE", 400);
+  }
 
   const schema = Yup.object().shape({
     name: Yup.string().min(2).max(50).required(),
@@ -133,6 +144,8 @@ export const signup = async (req: Request, res: Response): Promise<Response> => 
     recurrence: "MENSAL",
     dueDate: dueDate.toISOString()
   });
+
+  SendWelcomeService({ company, plan }).catch(() => undefined);
 
   return res.status(200).json({ id: company.id, name: company.name });
 };
