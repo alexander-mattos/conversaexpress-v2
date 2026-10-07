@@ -35,6 +35,7 @@ import NotificationsPopOver from "./NotificationsPopOver";
 import NotificationsVolume from "./NotificationsVolume";
 import ChatPopover from "./ChatPopover";
 import AnnouncementsPopover from "./AnnouncementsPopover";
+import TrialBanner from "./TrialBanner";
 import UserModal from "@/components/users/UserModal";
 
 const DRAWER_WIDTH = 240;
@@ -265,6 +266,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
       <Box component="main" sx={{ flex: 1, overflow: "auto" }}>
         <Box sx={{ minHeight: 48 }} />
+        <TrialBanner />
         {children}
       </Box>
     </Box>

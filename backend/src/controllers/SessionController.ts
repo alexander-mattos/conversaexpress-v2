@@ -7,6 +7,7 @@ import { SendRefreshToken, refreshCookieOptions } from "../helpers/SendRefreshTo
 import { RefreshTokenService } from "../services/AuthServices/RefreshTokenService";
 import FindUserFromToken from "../services/AuthServices/FindUserFromToken";
 import User from "../models/User";
+import { withTrialFlag } from "../helpers/CompanyBilling";
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
   const { email, password } = req.body;
@@ -30,7 +31,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
   return res.status(200).json({
     token,
-    user: serializedUser
+    user: await withTrialFlag(serializedUser)
   });
 };
 
@@ -52,7 +53,7 @@ export const update = async (
 
   SendRefreshToken(res, refreshToken);
 
-  return res.json({ token: newToken, user });
+  return res.json({ token: newToken, user: await withTrialFlag(user.toJSON() as any) });
 };
 
 export const me = async (req: Request, res: Response): Promise<Response> => {

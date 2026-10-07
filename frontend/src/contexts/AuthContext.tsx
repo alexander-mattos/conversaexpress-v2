@@ -7,6 +7,7 @@ import { differenceInCalendarDays, format, isBefore } from "date-fns";
 import { api, refreshSession, setAccessToken, setOnSessionExpired } from "@/lib/api";
 import { socketManager } from "@/lib/socket";
 import { toastError } from "@/lib/toastError";
+import { TRIAL_DISMISS_KEY } from "@/lib/billing/trial";
 import { i18n } from "@/i18n";
 
 export interface Queue {
@@ -30,7 +31,7 @@ export interface User {
   allTicket?: string;
   whatsappId?: number | null;
   queues: Queue[];
-  company?: { id: number; name: string; dueDate?: string; settings?: Setting[] } | null;
+  company?: { id: number; name: string; dueDate?: string; trial?: boolean; settings?: Setting[] } | null;
 }
 
 interface LoginData {
@@ -134,7 +135,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCampaignsEnabled(isCampaignsEnabled(data.user.company?.settings));
         toast.success(i18n.t("auth.toasts.success"));
 
-        if (due) {
+        // Novo login mostra de novo o aviso de teste, mesmo se fechado antes.
+        try {
+          sessionStorage.removeItem(TRIAL_DISMISS_KEY);
+        } catch {
+          // sem sessionStorage
+        }
+        // No teste, o aviso fixo no header substitui o toast de vencimento.
+        if (due && !data.user.company?.trial) {
           const days = differenceInCalendarDays(due, new Date());
           if (days < 5) toast.warn(`Sua assinatura vence em ${days} ${days === 1 ? "dia" : "dias"} `);
         }

@@ -93,7 +93,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 };
 
 // Período de teste do cadastro público (antes calculado no navegador).
-const SIGNUP_TRIAL_DAYS = Number(process.env.SIGNUP_TRIAL_DAYS || 3);
+const SIGNUP_TRIAL_DAYS = Number(process.env.SIGNUP_TRIAL_DAYS || 7);
 
 // Cadastro público: só aceita os dados do formulário. Plano é validado e
 // vencimento, status e recorrência são definidos pelo servidor.
