@@ -95,6 +95,22 @@ docker compose up -d --build
   ou com cada `$` escrito como `$$`; sem isso o compose trata o `$` como variável e corta o valor.
 - Logs: `docker compose logs -f backend`. Estado: `docker compose ps` (todos os serviços têm healthcheck).
 
+### Servidor que já usa nginx (outros sites nas portas 80/443)
+O Caddy não consegue subir se o nginx já ocupa as portas 80 e 443. Nesse caso, o nginx do host
+continua na frente (com o certbot) e o compose publica o frontend e o backend só no `127.0.0.1`:
+1. No `.env`, descomente `COMPOSE_FILE=docker-compose.yml:docker-compose.nginx.yml` (e, se as portas
+   3000 ou 8080 já estiverem em uso no host, ajuste `FRONTEND_HOST_PORT` / `BACKEND_HOST_PORT`).
+   O `ACME_EMAIL` continua obrigatório no `.env`, mas não é usado.
+2. `docker compose up -d --build`: sobem Postgres, Redis, backend e frontend, sem o Caddy.
+3. Copie `docker/nginx/conversaexpress.conf.example` para `/etc/nginx/sites-available/conversaexpress`,
+   troque os domínios (e as portas, se mudou), ative e gere os certificados:
+   ```
+   sudo ln -s /etc/nginx/sites-available/conversaexpress /etc/nginx/sites-enabled/
+   sudo nginx -t && sudo systemctl reload nginx
+   sudo certbot --nginx -d app.seudominio.com.br -d api.seudominio.com.br
+   ```
+O exemplo já trata o WebSocket do socket.io, uploads de até 100MB e o IP real do cliente.
+
 Atualizar:
 ```
 git pull

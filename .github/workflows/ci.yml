@@ -66,6 +66,7 @@ jobs:
               .env.docker.example > .env
           docker compose config -q
           docker compose -f docker-compose.dev.yml config -q
+          docker compose -f docker-compose.yml -f docker-compose.nginx.yml config -q
       - name: Build do backend
         run: docker build -t conversaexpress-backend:ci backend
       - name: Build do frontend
