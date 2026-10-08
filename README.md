@@ -79,7 +79,7 @@ Banco e Redis ficam só na rede interna; apenas as portas 80 e 443 são publicad
 Pré-requisitos: Docker com o plugin compose, e o DNS dos dois domínios apontando para o servidor.
 ```
 git clone <repositório> conversaexpress && cd conversaexpress
-cp .env.docker.example .env      # preencha domínios, e-mail e senhas (openssl rand -base64 32)
+cp .env.docker.example .env      # preencha domínios, e-mail e senhas (openssl rand -hex 32)
 docker compose up -d --build
 ```
 - Na primeira subida, o backend roda as migrations, cria a empresa padrão e o usuário
@@ -91,6 +91,8 @@ docker compose up -d --build
 - Cobrança das empresas pelo Asaas (Pix, boleto e cartão): preencha `ASAAS_API_KEY` e `ASAAS_WEBHOOK_TOKEN`
   (`ASAAS_SANDBOX=true` para testar). No painel do Asaas, em Integrações → Webhooks, cadastre
   `https://<BACKEND_DOMAIN>/subscription/webhook` com o mesmo token e os eventos de cobrança.
+- Valores com `$` no `.env` (como a chave do Asaas) vão entre aspas simples (`ASAAS_API_KEY='...'`)
+  ou com cada `$` escrito como `$$`; sem isso o compose trata o `$` como variável e corta o valor.
 - Logs: `docker compose logs -f backend`. Estado: `docker compose ps` (todos os serviços têm healthcheck).
 
 Atualizar:
@@ -108,7 +110,19 @@ docker run --rm -v conversaexpress_backend_public:/dados -v "$PWD":/destino busy
 ```
 
 Testar localmente com HTTPS (sem certificado público): no `.env`, use `FRONTEND_DOMAIN=localhost`,
-`BACKEND_DOMAIN=api.localhost` e `CADDY_GLOBAL_OPTIONS=local_certs`.
+`BACKEND_DOMAIN=api.localhost` e `CADDY_GLOBAL_OPTIONS=local_certs`. O Caddy cria uma autoridade
+certificadora própria; para o navegador confiar nela (sem o aviso "Não seguro"), copie e instale o
+certificado raiz:
+```
+docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt ./caddy-root.crt
+```
+- Windows: abra o `caddy-root.crt` → Instalar Certificado → Máquina Local → "Autoridades de
+  Certificação Raiz Confiáveis". Feche todas as janelas do navegador e abra de novo.
+- Linux: `sudo cp caddy-root.crt /usr/local/share/ca-certificates/ && sudo update-ca-certificates`.
+- Firefox usa a própria lista: Configurações → Certificados → Importar.
+
+Com o WSL, instale no Windows (é onde o navegador roda). O certificado continua válido enquanto o
+volume `caddy_data` existir.
 
 ### Desenvolvimento
 ```

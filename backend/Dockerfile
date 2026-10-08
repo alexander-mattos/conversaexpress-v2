@@ -17,8 +17,10 @@ COPY --from=build --chown=node:node /app/package.json /app/.sequelizerc ./
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --chown=node:node docker ./docker
-# Mídias enviadas, planilhas em importação e certificados (volumes no compose).
-RUN mkdir -p public private/imports && chown -R node:node public private
+# Clone no Windows pode trazer o script com CRLF ("#!/bin/sh\r" não existe no Linux).
+# Mídias enviadas e planilhas em importação (volumes no compose).
+RUN sed -i 's/\r$//' docker/*.sh && chmod +x docker/*.sh \
+  && mkdir -p public private/imports && chown -R node:node public private
 USER node
 EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=5 \
