@@ -109,8 +109,11 @@ docker run --rm -v conversaexpress_backend_public:/dados -v "$PWD":/destino busy
   tar czf /destino/midias.tgz -C /dados .
 ```
 
-Testar localmente com HTTPS (sem certificado público): no `.env`, use `FRONTEND_DOMAIN=localhost`,
-`BACKEND_DOMAIN=api.localhost` e `CADDY_GLOBAL_OPTIONS=local_certs`. O Caddy cria uma autoridade
+Testar localmente com HTTPS (sem certificado público): no `.env`, use
+`FRONTEND_DOMAIN=app.conversa.localhost`, `BACKEND_DOMAIN=api.conversa.localhost` e
+`CADDY_GLOBAL_OPTIONS=local_certs` (o navegador resolve qualquer `*.localhost` para a própria máquina).
+Os dois domínios precisam ser do mesmo "site": `localhost` e `api.localhost` contam como sites diferentes,
+e aí o cookie de sessão (`SameSite=Lax`) não é enviado e o F5 encerra a sessão. O Caddy cria uma autoridade
 certificadora própria; para o navegador confiar nela (sem o aviso "Não seguro"), copie e instale o
 certificado raiz:
 ```
