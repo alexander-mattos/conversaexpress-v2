@@ -1,0 +1,49 @@
+# nginx do host na frente do docker-compose.nginx.yml.
+# 1. Copie para /etc/nginx/sites-available/conversaexpress e troque os domínios
+#    (e as portas, se mudou FRONTEND_HOST_PORT / BACKEND_HOST_PORT no .env).
+# 2. sudo ln -s /etc/nginx/sites-available/conversaexpress /etc/nginx/sites-enabled/
+# 3. sudo nginx -t && sudo systemctl reload nginx
+# 4. sudo certbot --nginx -d app.seudominio.com.br -d api.seudominio.com.br
+#    (o certbot acrescenta o listen 443 e o redirecionamento para HTTPS).
+
+# WebSocket (socket.io) só pede upgrade quando o cliente manda o cabeçalho.
+# Nome próprio da variável para não colidir com um map igual de outro site.
+map $http_upgrade $ce_connection_upgrade {
+  default upgrade;
+  ''      close;
+}
+
+server {
+  listen 80;
+  server_name app.seudominio.com.br;
+
+  location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+
+server {
+  listen 80;
+  server_name api.seudominio.com.br;
+
+  # Uploads de mídia (o backend limita cada tipo de arquivo).
+  client_max_body_size 100M;
+
+  location / {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $ce_connection_upgrade;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    # O backend confia em 1 proxy (trust proxy): o IP real é o último desta lista.
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 300s;
+  }
+}

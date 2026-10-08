@@ -1,0 +1,17 @@
+# Servidor que já tem nginx nas portas 80/443 (outros sites): o nginx do host faz o
+# HTTPS (certbot) e repassa para o frontend e o backend, publicados só no localhost.
+# O Caddy não sobe. Use junto com o arquivo principal, ou deixe fixo no .env:
+#   COMPOSE_FILE=docker-compose.yml:docker-compose.nginx.yml
+# Exemplo de configuração do nginx: docker/nginx/conversaexpress.conf.example
+services:
+  caddy:
+    # Fora do perfil padrão: só sobe com --profile caddy.
+    profiles: ["caddy"]
+
+  backend:
+    ports:
+      - "127.0.0.1:${BACKEND_HOST_PORT:-8080}:8080"
+
+  frontend:
+    ports:
+      - "127.0.0.1:${FRONTEND_HOST_PORT:-3000}:3000"
